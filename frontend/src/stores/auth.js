@@ -3,11 +3,25 @@ import api from '../services/api';
 import authService from '../services/authService';
 
 export const useAuthStore = defineStore('auth', {
-  state: () => ({
-    user: JSON.parse(localStorage.getItem('user')) || null,
-    token: localStorage.getItem('token') || null,
-    isAuthenticated: !!localStorage.getItem('token')
-  }),
+  state: () => {
+    // Add safe parsing for user data
+    let user = null;
+    try {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        user = JSON.parse(userData);
+      }
+    } catch (error) {
+      console.error('Failed to parse user data from localStorage:', error);
+      localStorage.removeItem('user'); // Remove invalid data
+    }
+
+    return {
+      user,
+      token: localStorage.getItem('token') || null,
+      isAuthenticated: !!localStorage.getItem('token')
+    };
+  },
 
   getters: {
     isAdmin: (state) => state.user && state.user.role === 'admin',
