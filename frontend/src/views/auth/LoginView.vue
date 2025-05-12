@@ -1,195 +1,147 @@
 <template>
   <div class="login-container">
-    <h1 class="title">University Consortium CMS</h1>
-    <div class="form-card">
-      <h2>Login</h2>
-      <div v-if="error" class="error-alert">
-        {{ error }}
-      </div>
-      <form @submit.prevent="handleLogin">
+    <div class="login-card">
+      <h1>CMS Login</h1>
+      <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
           <label for="email">Email</label>
           <input
+            type="email"
             id="email"
             v-model="form.email"
-            type="email"
-            class="form-control"
             required
             placeholder="Enter your email"
           />
         </div>
-
+        
         <div class="form-group">
           <label for="password">Password</label>
           <input
+            type="password"
             id="password"
             v-model="form.password"
-            type="password"
-            class="form-control"
             required
             placeholder="Enter your password"
           />
         </div>
 
-        <div class="form-actions">
-          <button type="submit" class="btn-primary" :disabled="loading">
-            {{ loading ? 'Logging in...' : 'Login' }}
-          </button>
+        <div v-if="error" class="error-message">
+          {{ error }}
         </div>
 
-        <div class="form-footer">
-          <p>Don't have an account? <router-link to="/register">Register</router-link></p>
-        </div>
+        <button type="submit" :disabled="loading">
+          {{ loading ? 'Logging in...' : 'Login' }}
+        </button>
       </form>
     </div>
   </div>
 </template>
 
-<script>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/store/authStore';
+<script setup>
+import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
-export default {
-  name: 'LoginView',
-  setup() {
-    const authStore = useAuthStore();
-    const router = useRouter();
-    const error = ref('');
-    const loading = ref(false);
-    const form = ref({
-      email: '',
-      password: ''
-    });
+const router = useRouter()
+const authStore = useAuthStore()
 
-    const handleLogin = async () => {
-      loading.value = true;
-      error.value = '';
+const form = reactive({
+  email: '',
+  password: ''
+})
 
-      try {
-        const response = await authStore.login(form.value);
-        
-        // Redirect based on user role
-        if (authStore.isAdmin) {
-          router.push('/admin/dashboard');
-        } else if (authStore.isEditor) {
-          router.push('/editor/dashboard');
-        } else {
-          router.push('/');
-        }
-        
-        return response;
-      } catch (err) {
-        error.value = err.message || 'Login failed. Please check your credentials.';
-      } finally {
-        loading.value = false;
-      }
-    };
+const loading = ref(false)
+const error = ref('')
 
-    return {
-      form,
-      error,
-      loading,
-      handleLogin
-    };
+const handleLogin = async () => {
+  loading.value = true
+  error.value = ''
+  
+  try {
+    await authStore.login(form)
+    router.push(authStore.isAdmin ? '/admin/dashboard' : '/editor/dashboard')
+  } catch (err) {
+    error.value = err.response?.data?.message || 'Login failed. Please try again.'
+  } finally {
+    loading.value = false
   }
-};
+}
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .login-container {
+  min-height: 100vh;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  padding: 20px;
-  background-color: #f8f9fa;
+  background: #f5f6fa;
 }
 
-.title {
-  font-size: 2rem;
-  margin-bottom: 2rem;
-  color: #333;
-}
-
-.form-card {
-  width: 100%;
-  max-width: 450px;
-  padding: 30px;
-  background-color: white;
+.login-card {
+  background: white;
+  padding: 2rem;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-h2 {
-  margin-bottom: 20px;
-  text-align: center;
-  color: #333;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-}
-
-.form-control {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
+  max-width: 400px;
+
+  h1 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #2c3e50;
+  }
 }
 
-.btn-primary {
-  width: 100%;
-  padding: 12px;
-  background-color: #4a6cf7;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+.login-form {
+  .form-group {
+    margin-bottom: 1.5rem;
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #2c3e50;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+
+      &:focus {
+        outline: none;
+        border-color: #3498db;
+      }
+    }
+  }
+
+  button {
+    width: 100%;
+    padding: 0.75rem;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s;
+
+    &:hover {
+      background: #2980b9;
+    }
+
+    &:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+    }
+  }
 }
 
-.btn-primary:hover {
-  background-color: #3a5ad9;
-}
-
-.btn-primary:disabled {
-  background-color: #a2b2fb;
-  cursor: not-allowed;
-}
-
-.form-actions {
-  margin-top: 30px;
-}
-
-.form-footer {
-  margin-top: 20px;
+.error-message {
+  color: #e74c3c;
+  margin-bottom: 1rem;
   text-align: center;
-}
-
-.form-footer a {
-  color: #4a6cf7;
-  text-decoration: none;
-}
-
-.form-footer a:hover {
-  text-decoration: underline;
-}
-
-.error-alert {
-  background-color: #f8d7da;
-  color: #721c24;
-  padding: 12px;
-  border-radius: 4px;
-  margin-bottom: 20px;
+  font-size: 0.9rem;
 }
 </style>

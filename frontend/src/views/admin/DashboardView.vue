@@ -32,14 +32,44 @@
           <p>Review and manage submitted papers</p>
         </div>
       </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3>Total Conferences</h3>
+          <div class="stat-value">{{ stats.conferences }}</div>
+        </div>
+        <div class="stat-card">
+          <h3>Active Pages</h3>
+          <div class="stat-value">{{ stats.pages }}</div>
+        </div>
+        <div class="stat-card">
+          <h3>Total Users</h3>
+          <div class="stat-value">{{ stats.users }}</div>
+        </div>
+        <div class="stat-card">
+          <h3>Uploaded Files</h3>
+          <div class="stat-value">{{ stats.files }}</div>
+        </div>
+      </div>
+
+      <div class="dashboard-section">
+        <ConferenceManager
+          title="Manage Conferences"
+          :canCreate="true"
+          :canDelete="true"
+          @refresh="fetchStats"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script>
-import { computed } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/authStore';
+import ConferenceManager from '@/components/ConferenceManager.vue';
+import api from '@/services/api';
 
 export default {
   name: 'AdminDashboardView',
@@ -57,10 +87,32 @@ export default {
         console.error('Logout failed:', error);
       }
     };
-    
+
+    const stats = ref({
+      conferences: 0,
+      pages: 0,
+      users: 0,
+      files: 0
+    });
+
+    const fetchStats = async () => {
+      try {
+        const response = await api.get('/admin/stats');
+        stats.value = response.data;
+      } catch (error) {
+        console.error('Error fetching admin stats:', error);
+      }
+    };
+
+    onMounted(() => {
+      fetchStats();
+    });
+
     return {
       user,
-      logout
+      logout,
+      stats,
+      fetchStats
     };
   }
 }
@@ -132,5 +184,40 @@ export default {
 .card h3 {
   margin-top: 0;
   color: #4a6cf7;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.stat-card h3 {
+  margin: 0 0 1rem;
+  color: #2c3e50;
+  font-size: 1rem;
+}
+
+.stat-card .stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #3498db;
+}
+
+.dashboard-section {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
 }
 </style>
