@@ -2,7 +2,6 @@
 .DS_Store
 .idea
 .vscode
-.env
 *.log
 logs/
 
@@ -12,7 +11,6 @@ logs/
 # Frontend
 /frontend/node_modules
 /frontend/dist
-/frontend/.env
 /frontend/.env.local
 /frontend/.env.development.local
 /frontend/.env.test.local
@@ -28,8 +26,6 @@ logs/
 /backend/public/storage
 /backend/storage/*.key
 /backend/vendor
-/backend/.env
-/backend/.env.backup
 /backend/.phpunit.result.cache
 /backend/Homestead.json
 /backend/Homestead.yaml
