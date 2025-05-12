@@ -139,6 +139,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { userApi } from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
 
 const users = ref([])
 const loading = ref(false)
@@ -181,9 +182,12 @@ const fetchUsers = async () => {
   try {
     const response = await userApi.getAll()
     users.value = response.data
+    // Clear error on success
+    error.value = ''
   } catch (err) {
-    error.value = 'Failed to load users. Please try again.'
     console.error('Error fetching users:', err)
+    error.value = 'Failed to load users. Please try again.'
+    users.value = [] // Ensure users is empty if there's an error
   } finally {
     loading.value = false
   }
@@ -516,4 +520,4 @@ onMounted(() => {
     }
   }
 }
-</style> 
+</style>

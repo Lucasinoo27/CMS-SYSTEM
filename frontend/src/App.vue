@@ -4,7 +4,7 @@
 
 <script>
 import { onMounted } from 'vue';
-import { useAuthStore } from './store/authStore';
+import { useAuthStore } from './stores/auth';
 
 export default {
   name: 'App',
@@ -13,9 +13,9 @@ export default {
 
     onMounted(async () => {
       // Check if user is already authenticated
-      if (localStorage.getItem('auth_token')) {
+      if (localStorage.getItem('token')) {
         try {
-          await authStore.fetchCurrentUser();
+          await authStore.fetchUser();
         } catch (error) {
           console.error('Failed to fetch user:', error);
         }

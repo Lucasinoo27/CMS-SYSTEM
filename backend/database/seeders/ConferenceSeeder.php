@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Conference;
 use Illuminate\Database\Seeder;
+use App\Models\Conference;
 use Illuminate\Support\Str;
 
 class ConferenceSeeder extends Seeder
@@ -13,69 +13,45 @@ class ConferenceSeeder extends Seeder
      */
     public function run(): void
     {
-        $universities = [
+        // Sample conference data
+        $conferences = [
             [
-                'name' => 'University of Ljubljana, Biotechnical Faculty',
-                'location' => 'Ljubljana, Slovenia',
-                'description' => 'Conference hosted by the Department of Animal Science at the Biotechnical Faculty of University of Ljubljana.',
+                'name' => 'European Higher Education Conference 2025',
+                'slug' => 'european-higher-education-conference-2025',
+                'description' => 'Annual gathering of European university representatives discussing the future of higher education.',
+                'start_date' => '2025-09-15',
+                'end_date' => '2025-09-18',
+                'status' => 'published',
             ],
             [
-                'name' => 'University of Zagreb, Faculty of Agriculture',
-                'location' => 'Zagreb, Croatia',
-                'description' => 'Annual agricultural science conference organized by the Faculty of Agriculture at University of Zagreb.',
+                'name' => 'International Research Symposium',
+                'slug' => 'international-research-symposium',
+                'description' => 'A platform for researchers to present their latest findings across multiple disciplines.',
+                'start_date' => '2025-10-22',
+                'end_date' => '2025-10-25',
+                'status' => 'published',
             ],
             [
-                'name' => 'Josip Juraj Strossmayer University of Osijek, Faculty of Agrobiotechnical Sciences',
-                'location' => 'Osijek, Croatia',
-                'description' => 'International conference on agrobiotechnical sciences hosted by Josip Juraj Strossmayer University.',
+                'name' => 'Student Exchange Program Workshop',
+                'slug' => 'student-exchange-program-workshop',
+                'description' => 'Workshop focused on improving student mobility and exchange programs across European universities.',
+                'start_date' => '2025-11-05',
+                'end_date' => '2025-11-07',
+                'status' => 'published',
             ],
             [
-                'name' => 'BOKU University',
-                'location' => 'Vienna, Austria',
-                'description' => 'University of Natural Resources and Life Sciences (BOKU) annual scientific conference.',
-            ],
-            [
-                'name' => 'University of Padua',
-                'location' => 'Padua, Italy',
-                'description' => 'International symposium on agricultural and biological sciences by the University of Padua.',
-            ],
-            [
-                'name' => 'Czech University of Life Sciences Prague',
-                'location' => 'Prague, Czech Republic',
-                'description' => 'Conference on sustainable agriculture and life sciences hosted by the Czech University of Life Sciences.',
-            ],
-            [
-                'name' => 'Hungarian University of Agricultural and Life Sciences',
-                'location' => 'Gödöllő, Hungary',
-                'description' => 'Annual agricultural and life sciences research symposium from MATE University.',
-            ],
-            [
-                'name' => 'Slovak University of Agriculture in Nitra',
-                'location' => 'Nitra, Slovakia',
-                'description' => 'International conference on agricultural innovation and sustainability in Central Europe.',
+                'name' => 'Digital Transformation in Education',
+                'slug' => 'digital-transformation-in-education',
+                'description' => 'Conference exploring technological innovations and digital strategies in higher education.',
+                'start_date' => '2026-01-18',
+                'end_date' => '2026-01-20',
+                'status' => 'published',
             ],
         ];
 
-        // Start date is set to be within the next 3 to 9 months
-        $startDate = now()->addMonths(rand(3, 9));
-        
-        foreach ($universities as $university) {
-            // Generate random conference duration between 2 and 5 days
-            $endDate = clone $startDate;
-            $endDate->addDays(rand(2, 5));
-            
-            Conference::create([
-                'name' => $university['name'] . ' Academic Conference ' . date('Y'),
-                'slug' => Str::slug($university['name'] . '-conference-' . date('Y')),
-                'description' => $university['description'],
-                'start_date' => $startDate->format('Y-m-d'),
-                'end_date' => $endDate->format('Y-m-d'),
-                'location' => $university['location'],
-                'status' => 'published',
-            ]);
-            
-            // Increment start date by 14 days for the next conference
-            $startDate->addDays(14);
+        // Create each conference
+        foreach ($conferences as $conferenceData) {
+            Conference::create($conferenceData);
         }
     }
 }

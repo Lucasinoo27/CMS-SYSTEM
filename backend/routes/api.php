@@ -34,11 +34,22 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // The following routes will be implemented in future phases
 
-// Basic placeholder routes for testing
-Route::get('/conferences', function() {
-    return response()->json(['message' => 'Conferences endpoint working']);
+// Admin routes
+Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::get('/stats', [App\Http\Controllers\Api\AdminController::class, 'getStats']);
+    Route::get('/pages', [App\Http\Controllers\Api\AdminPagesController::class, 'getAllPages']);
+    Route::get('/pages/counts', [App\Http\Controllers\Api\AdminPagesController::class, 'getPageCountsByConference']);
 });
 
+// Conference routes
+Route::apiResource('conferences', App\Http\Controllers\Api\ConferenceController::class);
+
+// User management routes
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::apiResource('users', App\Http\Controllers\Api\UserController::class);
+});
+
+// Basic placeholder routes for testing
 Route::get('/events', function() {
     return response()->json(['message' => 'Events endpoint working']);
 });

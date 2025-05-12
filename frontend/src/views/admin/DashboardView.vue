@@ -67,12 +67,15 @@
 <script>
 import { computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/stores/auth';
 import ConferenceManager from '@/components/ConferenceManager.vue';
 import api from '@/services/api';
 
 export default {
   name: 'AdminDashboardView',
+  components: {
+    ConferenceManager
+  },
   setup() {
     const authStore = useAuthStore();
     const router = useRouter();
@@ -101,6 +104,13 @@ export default {
         stats.value = response.data;
       } catch (error) {
         console.error('Error fetching admin stats:', error);
+        // Set default values if stats fail to load
+        stats.value = {
+          conferences: 0,
+          pages: 0,
+          users: 0,
+          files: 0
+        };
       }
     };
 

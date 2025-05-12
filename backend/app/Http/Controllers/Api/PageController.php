@@ -18,7 +18,13 @@ class PageController extends Controller
     public function __construct()
     {
         $this->middleware(['auth:sanctum']);
-        $this->middleware('role:admin,editor')->except(['index', 'show']);
+        // Use individual middleware instead of role middleware
+        $this->middleware(function ($request, $next) {
+            if (Auth::user()->isAdmin() || Auth::user()->isEditor()) {
+                return $next($request);
+            }
+            return response()->json(['message' => 'Unauthorized'], 403);
+        })->except(['index', 'show']);
     }
 
     /**

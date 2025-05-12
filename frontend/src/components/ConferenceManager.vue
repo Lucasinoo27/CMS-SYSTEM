@@ -117,6 +117,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { conferenceApi } from '@/services/api'
+import axios from 'axios'
 
 const props = defineProps({
   title: {
@@ -179,9 +180,12 @@ const fetchConferences = async () => {
   try {
     const response = await conferenceApi.getAll()
     conferences.value = response.data
+    // Clear any error if successful
+    error.value = ''
   } catch (err) {
-    error.value = 'Failed to load conferences. Please try again.'
     console.error('Error fetching conferences:', err)
+    error.value = 'Failed to load conferences. Please try again.'
+    conferences.value = [] // Ensure conferences is empty if there's an error
   } finally {
     loading.value = false
   }
@@ -424,4 +428,4 @@ onMounted(() => {
   background: #f8f9fa;
   border-radius: 4px;
 }
-</style> 
+</style>

@@ -92,8 +92,8 @@ class AuthController extends Controller
         // Get authenticated user
         $user = User::where('email', $request->email)->first();
 
-        // Get user roles
-        $roles = $user->roles->pluck('name')->toArray();
+        // Get user primary role (first role)
+        $role = $user->roles->isNotEmpty() ? $user->roles->first()->name : 'user';
         
         // Create token
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -105,7 +105,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'roles' => $roles,
+                'role' => $role,
             ],
             'token' => $token,
         ]);
@@ -137,7 +137,7 @@ class AuthController extends Controller
     public function getUser(Request $request)
     {
         $user = $request->user();
-        $roles = $user->roles->pluck('name')->toArray();
+        $role = $user->roles->isNotEmpty() ? $user->roles->first()->name : 'user';
         
         return response()->json([
             'status' => 'success',
@@ -145,7 +145,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'roles' => $roles,
+                'role' => $role,
             ]
         ]);
     }

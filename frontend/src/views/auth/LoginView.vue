@@ -59,9 +59,12 @@ const handleLogin = async () => {
   
   try {
     await authStore.login(form)
+    // Log success and redirect
+    console.log('Login successful, redirecting...')
     router.push(authStore.isAdmin ? '/admin/dashboard' : '/editor/dashboard')
   } catch (err) {
-    error.value = err.response?.data?.message || 'Login failed. Please try again.'
+    console.error('Login error:', err)
+    error.value = err.message || 'Login failed. Please try again.'
   } finally {
     loading.value = false
   }

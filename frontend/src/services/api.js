@@ -27,10 +27,9 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const authStore = useAuthStore()
-    
     if (error.response?.status === 401) {
-      authStore.logout()
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
       window.location.href = '/login'
     }
     
@@ -72,4 +71,4 @@ export const fileApi = {
   delete: (id) => api.delete(`/files/${id}`)
 }
 
-export default api 
+export default api

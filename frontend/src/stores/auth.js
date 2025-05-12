@@ -1,73 +1,87 @@
-import { defineStore } from 'pinia'
-import axios from 'axios'
+import { defineStore } from 'pinia';
+import api from '../services/api';
+import authService from '../services/authService';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: null,
+    user: JSON.parse(localStorage.getItem('user')) || null,
     token: localStorage.getItem('token') || null,
-    isAuthenticated: false
+    isAuthenticated: !!localStorage.getItem('token')
   }),
 
   getters: {
-    isAdmin: (state) => state.user?.role === 'admin',
-    isEditor: (state) => state.user?.role === 'editor',
+    isAdmin: (state) => state.user && state.user.role === 'admin',
+    isEditor: (state) => state.user && state.user.role === 'editor'
   },
 
   actions: {
     async login(credentials) {
       try {
-        const response = await axios.post('/api/auth/login', credentials)
-        const { token, user } = response.data
+        const response = await authService.login(credentials);
+        const { token, user } = response;
         
-        this.token = token
-        this.user = user
-        this.isAuthenticated = true
+        this.token = token;
+        this.user = user;
+        this.isAuthenticated = true;
         
-        localStorage.setItem('token', token)
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-        
-        return true
+        return response;
       } catch (error) {
-        console.error('Login failed:', error)
-        throw error
+        console.error('Login failed:', error);
+        throw error;
       }
     },
 
     async logout() {
       try {
-        await axios.post('/api/auth/logout')
+        await authService.logout();
+        this.token = null;
+        this.user = null;
+        this.isAuthenticated = false;
       } catch (error) {
-        console.error('Logout error:', error)
-      } finally {
-        this.token = null
-        this.user = null
-        this.isAuthenticated = false
-        localStorage.removeItem('token')
-        delete axios.defaults.headers.common['Authorization']
+        console.error('Logout error:', error);
+        this.clearAuth();
       }
     },
 
     async fetchUser() {
       try {
-        const response = await axios.get('/api/auth/user')
-        this.user = response.data
-        this.isAuthenticated = true
-        return true
+        const response = await authService.getCurrentUser();
+        this.user = response.user;
+        this.isAuthenticated = true;
+        localStorage.setItem('user', JSON.stringify(response.user));
+        return response.user;
       } catch (error) {
-        console.error('Failed to fetch user:', error)
-        this.logout()
-        throw error
+        console.error('Failed to fetch user:', error);
+        this.clearAuth();
+        throw error;
       }
     },
 
-    initializeAuth() {
-      const token = localStorage.getItem('token')
+    async initializeAuth() {
+      const token = localStorage.getItem('token');
+      
       if (token) {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-        this.token = token
-        return this.fetchUser()
+        this.token = token;
+        this.isAuthenticated = true;
+        
+        try {
+          await this.fetchUser();
+          return true;
+        } catch (error) {
+          this.clearAuth();
+          throw error;
+        }
       }
-      return Promise.resolve(false)
+      
+      return false;
+    },
+
+    clearAuth() {
+      this.token = null;
+      this.user = null;
+      this.isAuthenticated = false;
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
     }
   }
-}) 
+});

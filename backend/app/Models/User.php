@@ -71,6 +71,21 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if the user has any of the given roles.
+     *
+     * @param array|string $roles
+     * @return bool
+     */
+    public function hasAnyRole($roles)
+    {
+        if (is_string($roles)) {
+            $roles = [$roles];
+        }
+        
+        return $this->roles()->whereIn('name', $roles)->exists();
+    }
+
+    /**
      * Check if the user is an admin.
      *
      * @return bool

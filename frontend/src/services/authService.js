@@ -13,7 +13,7 @@ const authService = {
     try {
       const response = await axios.post(`${API_URL}/register`, userData);
       if (response.data.token) {
-        localStorage.setItem('auth_token', response.data.token);
+        localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
       }
       return response.data;
@@ -31,7 +31,7 @@ const authService = {
     try {
       const response = await axios.post(`${API_URL}/login`, credentials);
       if (response.data.token) {
-        localStorage.setItem('auth_token', response.data.token);
+        localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
       }
       return response.data;
@@ -47,11 +47,11 @@ const authService = {
   logout: async () => {
     try {
       const response = await axios.post(`${API_URL}/logout`);
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
       return response.data;
     } catch (error) {
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
       throw error.response?.data || { message: 'An error occurred during logout' };
     }
@@ -76,7 +76,7 @@ const authService = {
   setupInterceptors: () => {
     axios.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem('token');
         if (token) {
           config.headers['Authorization'] = `Bearer ${token}`;
         }
@@ -93,7 +93,7 @@ const authService = {
       },
       (error) => {
         if (error.response && error.response.status === 401) {
-          localStorage.removeItem('auth_token');
+          localStorage.removeItem('token');
           localStorage.removeItem('user');
           window.location.href = '/login';
         }
