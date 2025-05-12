@@ -16,6 +16,9 @@ class DatabaseSeeder extends Seeder
     {
         // Call role seeder first to ensure roles exist
         $this->call(RoleSeeder::class);
+        
+        // Seed conferences
+        $this->call(ConferenceSeeder::class);
 
         // Create admin user
         $admin = User::firstOrCreate(
