@@ -18,18 +18,21 @@
       <router-link to="/register" class="btn btn-secondary">Register</router-link>
     </div>
 
-    <div class="features-section">
-      <div class="feature">
-        <h3>Conference Management</h3>
-        <p>Organize and track academic conferences</p>
-      </div>
-      <div class="feature">
-        <h3>Role-Based Access</h3>
-        <p>Separate interfaces for editors and administrators</p>
-      </div>
-      <div class="feature">
-        <h3>Collaboration</h3>
-        <p>Work together on events and papers</p>
+    <!-- Conferences Section -->
+    <div class="conferences-section">
+      <h2>Upcoming Conferences</h2>
+      <div v-if="loading" class="loading">Loading conferences...</div>
+      <div v-else-if="error" class="error">{{ error }}</div>
+      <div v-else class="conferences-grid">
+        <div v-for="conference in conferences" :key="conference.id" class="conference-card">
+          <h3>{{ conference.name }}</h3>
+          <p class="conference-date">{{ formatDate(conference.date) }}</p>
+          <p class="conference-location">{{ conference.location }}</p>
+          <p class="conference-description">{{ conference.description }}</p>
+          <div class="conference-status" :class="conference.status.toLowerCase()">
+            {{ conference.status }}
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -47,16 +50,41 @@ export default {
     const router = useRouter();
     const authStore = useAuthStore();
     const backendStatus = ref('Checking connection...');
+    const conferences = ref([]);
+    const loading = ref(true);
+    const error = ref(null);
+
+    const formatDate = (dateString) => {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    };
+
+    const fetchConferences = async () => {
+      try {
+        const response = await axios.get('/conferences');
+        conferences.value = response.data;
+        loading.value = false;
+      } catch (err) {
+        error.value = 'Failed to load conferences';
+        loading.value = false;
+        console.error('Error fetching conferences:', err);
+      }
+    };
 
     onMounted(async () => {
       try {
-        // Check API health endpoint
         await axios.get('/health');
         backendStatus.value = 'Connected';
       } catch (error) {
         backendStatus.value = 'Connection issue';
         console.error('Backend connection issue:', error);
       }
+      
+      // Fetch conferences
+      await fetchConferences();
       
       // Check if user is already authenticated
       if (authStore.isAuthenticated) {
@@ -71,7 +99,11 @@ export default {
     });
 
     return {
-      backendStatus
+      backendStatus,
+      conferences,
+      loading,
+      error,
+      formatDate
     };
   }
 };
@@ -196,7 +228,102 @@ export default {
   line-height: 1.4;
 }
 
+.conferences-section {
+  width: 100%;
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 20px;
+}
+
+.conferences-section h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #333;
+}
+
+.conferences-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.conference-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.conference-card:hover {
+  transform: translateY(-5px);
+}
+
+.conference-card h3 {
+  color: #333;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.conference-date {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.conference-location {
+  color: #4a6cf7;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.conference-description {
+  color: #555;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.conference-status {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.conference-status.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.conference-status.approved {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.conference-status.rejected {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.loading {
+  text-align: center;
+  color: #666;
+  padding: 2rem;
+}
+
+.error {
+  text-align: center;
+  color: #dc3545;
+  padding: 2rem;
+}
+
 @media (max-width: 768px) {
+  .conferences-grid {
+    grid-template-columns: 1fr;
+  }
+  
   .features-section {
     flex-direction: column;
   }
