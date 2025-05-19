@@ -4,7 +4,7 @@ import App from './App.vue'
 import router from './router'
 import axios from 'axios'
 import authService from './services/authService'
-import { useAuthStore } from './stores/auth'
+import { useAuthStore } from './stores/authStore'
 
 import './assets/styles/main.css'
 

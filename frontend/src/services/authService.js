@@ -12,10 +12,6 @@ const authService = {
   register: async (userData) => {
     try {
       const response = await axios.post(`${API_URL}/register`, userData);
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-      }
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'An error occurred during registration' };
@@ -92,7 +88,7 @@ const authService = {
         return response;
       },
       (error) => {
-        if (error.response && error.response.status === 401) {
+        if (error.response && error.response.status === 401 && !error.config.url.includes('/login')) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           window.location.href = '/login';

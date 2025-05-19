@@ -139,7 +139,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { userApi } from '@/services/api'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/authStore'
 
 const users = ref([])
 const loading = ref(false)

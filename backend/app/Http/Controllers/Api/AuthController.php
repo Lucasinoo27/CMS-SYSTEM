@@ -25,7 +25,6 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => ['required', 'confirmed', Password::defaults()],
-            'role' => 'required|string|in:admin,editor',
         ]);
 
         if ($validator->fails()) {
@@ -41,22 +40,11 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-        ]);
-
-        // Assign role
-        $role = Role::where('name', $request->role)->first();
-        if ($role) {
-            $user->roles()->attach($role);
-        }
-
-        // Create token
-        $token = $user->createToken('auth_token')->plainTextToken;
+        ]);   
 
         return response()->json([
             'status' => 'success',
             'message' => 'User registered successfully',
-            'user' => $user,
-            'token' => $token,
         ], 201);
     }
 
@@ -92,8 +80,16 @@ class AuthController extends Controller
         // Get authenticated user
         $user = User::where('email', $request->email)->first();
 
+        // Check if user has any role
+        if ($user->roles->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Your account does not have an assigned role yet. Please contact the administrator.'
+            ], 403);
+        }
+
         // Get user primary role (first role)
-        $role = $user->roles->isNotEmpty() ? $user->roles->first()->name : 'user';
+        $role = $user->roles->first()->name;
         
         // Create token
         $token = $user->createToken('auth_token')->plainTextToken;

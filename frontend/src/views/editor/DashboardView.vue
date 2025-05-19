@@ -86,7 +86,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/authStore'
 import { storeToRefs } from 'pinia'
 import ConferenceManager from '@/components/ConferenceManager.vue'
 import api from '@/services/api'

@@ -10,9 +10,6 @@ RUN npm install
 # Copy app source code
 COPY . .
 
-# Note: Build command commented out as we're just setting up the skeleton
-# RUN npm run build
-
 # Expose port
 EXPOSE 8080
 

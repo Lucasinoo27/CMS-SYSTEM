@@ -41,7 +41,7 @@
 <script>
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/stores/authStore';
 import axios from 'axios';
 
 export default {

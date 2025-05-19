@@ -1,38 +1,47 @@
 <template>
   <div class="login-container">
+    <h1 class="title">University Consortium CMS</h1>
     <div class="login-card">
-      <h1>CMS Login</h1>
+      <h2>Login</h2>
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-group">
           <label for="email">Email</label>
           <input
-            type="email"
-            id="email"
-            v-model="form.email"
-            required
-            placeholder="Enter your email"
+          type="email"
+          id="email"
+          v-model="form.email"
+          required
+          placeholder="Enter your email"
           />
         </div>
         
         <div class="form-group">
           <label for="password">Password</label>
           <input
-            type="password"
-            id="password"
-            v-model="form.password"
-            required
-            placeholder="Enter your password"
+          type="password"
+          id="password"
+          v-model="form.password"
+          required
+          placeholder="Enter your password"
           />
         </div>
-
-        <div v-if="error" class="error-message">
+        
+        <div v-if="error" class="error-alert">
           {{ error }}
         </div>
-
+        
         <button type="submit" :disabled="loading">
           {{ loading ? 'Logging in...' : 'Login' }}
         </button>
       </form>
+
+      <p class="redirect-text">
+        Don’t have an account?<a
+          @click.prevent="$router.push('/register')"
+          href="#"
+          >Register</a
+        >
+      </p>
     </div>
   </div>
 </template>
@@ -40,7 +49,7 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -56,11 +65,10 @@ const error = ref('')
 const handleLogin = async () => {
   loading.value = true
   error.value = ''
-  
+
   try {
     await authStore.login(form)
     // Log success and redirect
-    console.log('Login successful, redirecting...')
     router.push(authStore.isAdmin ? '/admin/dashboard' : '/editor/dashboard')
   } catch (err) {
     console.error('Login error:', err)
@@ -75,23 +83,24 @@ const handleLogin = async () => {
 .login-container {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #f5f6fa;
+  background: #f8f9fa;
 }
 
 .login-card {
   background: white;
   padding: 2rem;
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 400px;
 
-  h1 {
+  h2 {
     text-align: center;
     margin-bottom: 2rem;
-    color: #2c3e50;
+    color: #333;
   }
 }
 
@@ -102,7 +111,7 @@ const handleLogin = async () => {
     label {
       display: block;
       margin-bottom: 0.5rem;
-      color: #2c3e50;
+      color: #333;
     }
 
     input {
@@ -114,7 +123,7 @@ const handleLogin = async () => {
 
       &:focus {
         outline: none;
-        border-color: #3498db;
+        border-color: #4a6cf7;
       }
     }
   }
@@ -122,29 +131,56 @@ const handleLogin = async () => {
   button {
     width: 100%;
     padding: 0.75rem;
-    background: #3498db;
+    background: #4a6cf7;
     color: white;
     border: none;
     border-radius: 4px;
     font-size: 1rem;
     cursor: pointer;
     transition: background 0.3s;
+    margin-top: 0.75rem;
 
     &:hover {
-      background: #2980b9;
+      background: #3a5ad9;
     }
 
     &:disabled {
-      background: #95a5a6;
+      background: #a2b2fb;
       cursor: not-allowed;
     }
   }
 }
 
-.error-message {
-  color: #e74c3c;
-  margin-bottom: 1rem;
+.title {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  color: #333;
+}
+
+.redirect-text {
+  margin-top: 1rem;
   text-align: center;
   font-size: 0.9rem;
+  color: #333;
+
+  a {
+    color: #4a6cf7;
+    text-decoration: none;
+    font-weight: 500;
+    margin-left: 0.25rem;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.error-alert {
+  background-color: #f8d7da;
+  color: #ca0011ff;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 20px;
 }
 </style>

@@ -55,15 +55,6 @@
           />
         </div>
 
-        <div class="form-group">
-          <label for="role">Role</label>
-          <select id="role" v-model="form.role" class="form-control" required>
-            <option value="" disabled>Select a role</option>
-            <option value="editor">Editor</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
-
         <div class="form-actions">
           <button type="submit" class="btn-primary" :disabled="loading">
             {{ loading ? 'Registering...' : 'Register' }}
@@ -81,7 +72,7 @@
 <script>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/stores/authStore';
 
 export default {
   name: 'RegisterView',
@@ -95,7 +86,6 @@ export default {
       email: '',
       password: '',
       password_confirmation: '',
-      role: ''
     });
 
     const handleRegister = async () => {
@@ -110,15 +100,7 @@ export default {
 
       try {
         const response = await authStore.register(form.value);
-        
-        // Redirect based on user role
-        if (authStore.isAdmin) {
-          router.push('/admin/dashboard');
-        } else if (authStore.isEditor) {
-          router.push('/editor/dashboard');
-        } else {
-          router.push('/');
-        }
+        router.push('/login');
         
         return response;
       } catch (err) {
@@ -235,7 +217,7 @@ label {
 
 .error-alert {
   background-color: #f8d7da;
-  color: #721c24;
+  color: #ca0011ff;
   padding: 12px;
   border-radius: 4px;
   margin-bottom: 20px;
