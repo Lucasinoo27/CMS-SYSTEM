@@ -8,7 +8,6 @@ use App\Models\Content;
 use App\Models\Page;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 
 class ContentController extends Controller
 {
@@ -17,7 +16,14 @@ class ContentController extends Controller
     public function __construct()
     {
         $this->middleware(['auth:sanctum']);
-        $this->middleware('role:admin,editor')->except(['index', 'show']);
+        $this->middleware(function ($request, $next) {
+            try {
+                authorize(fn($user) => $user->hasAnyRole(['admin', 'editor']));
+                return $next($request);
+            } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+        })->except(['index', 'show']);
     }
 
     /**
@@ -38,19 +44,19 @@ class ContentController extends Controller
      */
     public function store(Request $request, Page $page)
     {
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'type' => 'required|string|in:wysiwyg,markdown,html',
-            'content' => 'required|string',
-            'order' => 'integer',
-            'settings' => 'nullable|array'
-        ]);
-
-        if ($validator->fails()) {
-            return $this->errorResponse($validator->errors()->first(), 422);
+        try {
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'type' => 'required|string|in:wysiwyg,markdown,html',
+                'content' => 'required|string',
+                'order' => 'integer',
+                'settings' => 'nullable|array'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->errorResponse($e->errors()->first(), 422);
         }
 
-        $content = new Content($request->all());
+        $content = new Content($validated);
         $content->page_id = $page->id;
         $content->created_by = Auth::id();
         $content->updated_by = Auth::id();
@@ -81,19 +87,19 @@ class ContentController extends Controller
             return $this->notFoundResponse();
         }
 
-        $validator = Validator::make($request->all(), [
-            'title' => 'sometimes|required|string|max:255',
-            'type' => 'sometimes|required|string|in:wysiwyg,markdown,html',
-            'content' => 'sometimes|required|string',
-            'order' => 'integer',
-            'settings' => 'nullable|array'
-        ]);
-
-        if ($validator->fails()) {
-            return $this->errorResponse($validator->errors()->first(), 422);
+        try {
+            $validated = $request->validate([
+                'title' => 'sometimes|required|string|max:255',
+                'type' => 'sometimes|required|string|in:wysiwyg,markdown,html',
+                'content' => 'sometimes|required|string',
+                'order' => 'integer',
+                'settings' => 'nullable|array'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->errorResponse($e->errors()->first(), 422);
         }
 
-        $content->fill($request->all());
+        $content->fill($validated);
         $content->updated_by = Auth::id();
         $content->save();
 
@@ -118,16 +124,16 @@ class ContentController extends Controller
      */
     public function reorder(Request $request, Page $page)
     {
-        $validator = Validator::make($request->all(), [
-            'order' => 'required|array',
-            'order.*' => 'required|integer|distinct'
-        ]);
-
-        if ($validator->fails()) {
-            return $this->errorResponse($validator->errors()->first(), 422);
+        try {
+            $validated = $request->validate([
+                'order' => 'required|array',
+                'order.*' => 'required|integer|distinct'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->errorResponse($e->errors()->first(), 422);
         }
 
-        foreach ($request->order as $index => $id) {
+        foreach ($validated['order'] as $index => $id) {
             Content::where('id', $id)
                 ->where('page_id', $page->id)
                 ->update(['order' => $index]);

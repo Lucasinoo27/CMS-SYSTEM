@@ -178,8 +178,19 @@ const fetchConferences = async () => {
   error.value = ''
   
   try {
+    // Add a small delay to ensure loading indicator is visible
+    const startTime = Date.now()
+    
+    // Make API request
     const response = await conferenceApi.getAll()
     conferences.value = response.data
+    
+    // Ensure loading indicator shows for at least 300ms to avoid flicker
+    const elapsedTime = Date.now() - startTime
+    if (elapsedTime < 300) {
+      await new Promise(resolve => setTimeout(resolve, 300 - elapsedTime))
+    }
+    
     // Clear any error if successful
     error.value = ''
   } catch (err) {

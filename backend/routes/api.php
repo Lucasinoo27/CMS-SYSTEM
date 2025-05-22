@@ -1,12 +1,16 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Response;
 use App\Http\Controllers\Api\PageController;
 use App\Http\Controllers\Api\ContentController;
 use App\Http\Controllers\Api\FileUploadController;
+use App\Http\Controllers\Api\ConferenceController;
+use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\AdminPagesController;
+use App\Http\Controllers\Api\UserController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Response;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,10 +23,7 @@ use App\Http\Controllers\Api\FileUploadController;
 |
 */
 
-// Health check route
-Route::get('/health', function () {
-    return response()->json(['status' => 'ok', 'message' => 'API is online'], 200);
-});
+// Health check route is now in routes/health.php
 
 // Authentication Routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -32,35 +33,25 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'getUser']);
 });
 
-// The following routes will be implemented in future phases
-
-// Admin routes
-Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function () {
-    Route::get('/stats', [App\Http\Controllers\Api\AdminController::class, 'getStats']);
-    Route::get('/pages', [App\Http\Controllers\Api\AdminPagesController::class, 'getAllPages']);
-    Route::get('/pages/counts', [App\Http\Controllers\Api\AdminPagesController::class, 'getPageCountsByConference']);
+// Admin routes - Now using authorize helper in controllers directly
+Route::prefix('admin')->middleware(['auth:sanctum'])->group(function () {
+    Route::get('/stats', [AdminController::class, 'getStats']);
+    Route::get('/pages', [AdminPagesController::class, 'getAllPages']);
+    Route::get('/pages/counts', [AdminPagesController::class, 'getPageCountsByConference']);
 });
 
 // Conference routes
-Route::apiResource('conferences', App\Http\Controllers\Api\ConferenceController::class);
+Route::apiResource('conferences', ConferenceController::class);
 
 // User management routes
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::apiResource('users', App\Http\Controllers\Api\UserController::class);
+    Route::apiResource('users', UserController::class);
 });
 
 // Basic placeholder routes for testing
-Route::get('/events', function() {
-    return response()->json(['message' => 'Events endpoint working']);
-});
-
-Route::get('/papers', function() {
-    return response()->json(['message' => 'Papers endpoint working']);
-});
-
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+Route::get('/events', fn() => response()->json(['message' => 'Events endpoint working']));
+Route::get('/papers', fn() => response()->json(['message' => 'Papers endpoint working']));
+Route::middleware('auth:sanctum')->get('/user', fn(Request $request) => $request->user());
 
 // Conference Pages
 Route::prefix('conferences/{conference}')->group(function () {
@@ -78,4 +69,9 @@ Route::prefix('conferences/{conference}')->group(function () {
             Route::delete('files/{file}', [FileUploadController::class, 'destroy']);
         });
     });
+});
+
+// Health check route
+Route::get('/health', function () {
+    return response()->json(['status' => 'ok', 'message' => 'API is online'], 200);
 });

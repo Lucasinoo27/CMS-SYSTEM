@@ -9,7 +9,6 @@ use App\Models\Content;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class FileUploadController extends Controller
@@ -19,7 +18,14 @@ class FileUploadController extends Controller
     public function __construct()
     {
         $this->middleware(['auth:sanctum']);
-        $this->middleware('role:admin,editor');
+        $this->middleware(function ($request, $next) {
+            try {
+                authorize(fn($user) => $user->hasAnyRole(['admin', 'editor']));
+                return $next($request);
+            } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+        });
     }
 
     /**
@@ -35,12 +41,12 @@ class FileUploadController extends Controller
      */
     public function store(Request $request, Content $content)
     {
-        $validator = Validator::make($request->all(), [
-            'file' => 'required|file|max:10240', // 10MB max
-        ]);
-
-        if ($validator->fails()) {
-            return $this->errorResponse($validator->errors()->first(), 422);
+        try {
+            $validated = $request->validate([
+                'file' => 'required|file|max:10240', // 10MB max
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->errorResponse($e->errors()->first(), 422);
         }
 
         $file = $request->file('file');

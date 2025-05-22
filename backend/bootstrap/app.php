@@ -12,7 +12,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        // Register existing role checking middleware
+        $middleware->alias([
+            'admin' => \App\Http\Middleware\IsAdmin::class,
+            'editor' => \App\Http\Middleware\IsEditor::class,
+            'role' => \App\Http\Middleware\CheckRole::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

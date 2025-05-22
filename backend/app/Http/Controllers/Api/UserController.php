@@ -7,7 +7,6 @@ use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
@@ -45,26 +44,26 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => ['required', 'confirmed', Password::defaults()],
-            'role' => 'required|string|in:admin,editor',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users',
+                'password' => ['required', 'confirmed', Password::defaults()],
+                'role' => 'required|string|in:admin,editor',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
         }
 
         // Create user
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
         ]);
 
         // Assign role
-        $role = Role::where('name', $request->role)->first();
+        $role = Role::where('name', $validated['role'])->first();
         if ($role) {
             $user->roles()->attach($role);
         }
@@ -108,41 +107,41 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $id,
-            'password' => ['sometimes', 'required', 'confirmed', Password::defaults()],
-            'role' => 'sometimes|required|string|in:admin,editor',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        try {
+            $validated = $request->validate([
+                'name' => 'sometimes|required|string|max:255',
+                'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $id,
+                'password' => ['sometimes', 'required', 'confirmed', Password::defaults()],
+                'role' => 'sometimes|required|string|in:admin,editor',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
         }
 
         $user = User::findOrFail($id);
         
         // Update user data
-        if ($request->has('name')) {
-            $user->name = $request->name;
+        if (isset($validated['name'])) {
+            $user->name = $validated['name'];
         }
         
-        if ($request->has('email')) {
-            $user->email = $request->email;
+        if (isset($validated['email'])) {
+            $user->email = $validated['email'];
         }
         
-        if ($request->has('password')) {
-            $user->password = Hash::make($request->password);
+        if (isset($validated['password'])) {
+            $user->password = Hash::make($validated['password']);
         }
         
         $user->save();
         
         // Update role if provided
-        if ($request->has('role')) {
+        if (isset($validated['role'])) {
             // Remove all current roles
             $user->roles()->detach();
             
             // Attach new role
-            $role = Role::where('name', $request->role)->first();
+            $role = Role::where('name', $validated['role'])->first();
             if ($role) {
                 $user->roles()->attach($role);
             }

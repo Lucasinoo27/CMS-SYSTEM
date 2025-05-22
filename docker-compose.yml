@@ -20,6 +20,13 @@ services:
       - "DB_USERNAME=${DB_USERNAME}"
       - "DB_PASSWORD=${DB_PASSWORD}"
       - "REDIS_HOST=redis"
+      - "PHP_OPCACHE_VALIDATE_TIMESTAMPS=1"
+      - "PHP_OPCACHE_ENABLE=1"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
   # Vue Frontend 
   frontend:
@@ -35,6 +42,13 @@ services:
       - "${FRONTEND_PORT:-8080}:8080"
     networks:
       - university-cms-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    environment:
+      - "NODE_OPTIONS=--max-old-space-size=512"
 
   # Nginx Web Server 
   nginx:
@@ -54,6 +68,11 @@ services:
       - frontend
     networks:
       - university-cms-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
 
   # MySQL Database
   mysql:
@@ -73,6 +92,12 @@ services:
       - "${MYSQL_PORT:-3306}:3306"
     networks:
       - university-cms-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+    command: --default-authentication-plugin=mysql_native_password
 
   # Redis for Caching
   redis:
@@ -85,6 +110,12 @@ services:
       - university-cms-network
     volumes:
       - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 384M
 
   # PhpMyAdmin
   phpmyadmin:
@@ -101,6 +132,11 @@ services:
       - mysql
     networks:
       - university-cms-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
 
 networks:
   university-cms-network:

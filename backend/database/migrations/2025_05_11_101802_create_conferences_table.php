@@ -13,14 +13,17 @@ return new class extends Migration
     {
         Schema::create('conferences', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name')->index();
             $table->string('slug')->unique();
             $table->text('description')->nullable();
-            $table->date('start_date')->nullable();
-            $table->date('end_date')->nullable();
+            $table->date('start_date')->nullable()->index();
+            $table->date('end_date')->nullable()->index();
             $table->string('location')->nullable();
-            $table->string('status')->default('draft'); // draft, published, archived
+            $table->string('status')->default('draft')->index(); // draft, published, archived
             $table->timestamps();
+            
+            // Add composite index for common queries
+            $table->index(['status', 'start_date']);
         });
     }
 

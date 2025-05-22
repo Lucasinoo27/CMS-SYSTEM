@@ -9,7 +9,6 @@ use App\Models\Conference;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 
 class PageController extends Controller
 {
@@ -20,10 +19,13 @@ class PageController extends Controller
         $this->middleware(['auth:sanctum']);
         // Use individual middleware instead of role middleware
         $this->middleware(function ($request, $next) {
-            if (Auth::user()->isAdmin() || Auth::user()->isEditor()) {
+            // Use new authorize helper function
+            try {
+                authorize(fn($user) => $user->isAdmin() || $user->isEditor());
                 return $next($request);
+            } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+                return response()->json(['message' => 'Unauthorized'], 403);
             }
-            return response()->json(['message' => 'Unauthorized'], 403);
         })->except(['index', 'show']);
     }
 
@@ -50,19 +52,19 @@ class PageController extends Controller
      */
     public function store(Request $request, Conference $conference)
     {
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'meta_description' => 'nullable|string|max:255',
-            'layout' => 'required|string|in:default,full-width,sidebar',
-            'is_published' => 'boolean'
-        ]);
-
-        if ($validator->fails()) {
-            return $this->errorResponse($validator->errors()->first(), 422);
+        try {
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'meta_description' => 'nullable|string|max:255',
+                'layout' => 'required|string|in:default,full-width,sidebar',
+                'is_published' => 'boolean'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->errorResponse($e->errors()->first(), 422);
         }
 
-        $page = new Page($request->all());
-        $page->slug = Str::slug($request->title);
+        $page = new Page($validated);
+        $page->slug = Str::slug($validated['title']);
         $page->conference_id = $conference->id;
         $page->created_by = Auth::id();
         $page->updated_by = Auth::id();
@@ -76,8 +78,12 @@ class PageController extends Controller
      */
     public function show(Conference $conference, Page $page)
     {
-        if (!$page->is_published && !Auth::user()->hasAnyRole(['admin', 'editor'])) {
-            return $this->forbiddenResponse();
+        if (!$page->is_published) {
+            try {
+                authorize(fn($user) => $user->hasAnyRole(['admin', 'editor']));
+            } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+                return $this->forbiddenResponse();
+            }
         }
 
         $page->load(['contents', 'creator', 'updater']);
@@ -89,22 +95,22 @@ class PageController extends Controller
      */
     public function update(Request $request, Conference $conference, Page $page)
     {
-        $validator = Validator::make($request->all(), [
-            'title' => 'sometimes|required|string|max:255',
-            'meta_description' => 'nullable|string|max:255',
-            'layout' => 'sometimes|required|string|in:default,full-width,sidebar',
-            'is_published' => 'boolean'
-        ]);
-
-        if ($validator->fails()) {
-            return $this->errorResponse($validator->errors()->first(), 422);
+        try {
+            $validated = $request->validate([
+                'title' => 'sometimes|required|string|max:255',
+                'meta_description' => 'nullable|string|max:255',
+                'layout' => 'sometimes|required|string|in:default,full-width,sidebar',
+                'is_published' => 'boolean'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->errorResponse($e->errors()->first(), 422);
         }
 
-        if ($request->has('title')) {
-            $page->slug = Str::slug($request->title);
+        if (isset($validated['title'])) {
+            $page->slug = Str::slug($validated['title']);
         }
         
-        $page->fill($request->all());
+        $page->fill($validated);
         $page->updated_by = Auth::id();
         $page->save();
 

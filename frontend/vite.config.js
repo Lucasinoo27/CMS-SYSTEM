@@ -15,10 +15,17 @@ export default defineConfig({
     port: 8080,
     watch: {
       usePolling: true,
-      interval: 1000,
+      interval: 300,
     },
     hmr: {
       host: 'localhost',
+      clientPort: 8080,
     },
+    fs: {
+      strict: false
+    },
+  },
+  optimizeDeps: {
+    include: ['vue', 'vue-router', 'pinia', 'axios'],
   },
 });

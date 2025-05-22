@@ -14,6 +14,20 @@ class AdminController extends Controller
 {
     use HasApiResponses;
 
+    public function __construct()
+    {
+        $this->middleware(['auth:sanctum']);
+        // Use authorize helper directly
+        $this->middleware(function ($request, $next) {
+            try {
+                authorize(fn($user) => $user->isAdmin());
+                return $next($request);
+            } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+        });
+    }
+
     /**
      * Get dashboard statistics.
      *

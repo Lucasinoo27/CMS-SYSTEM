@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Conference;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 class ConferenceController extends Controller
 {
@@ -17,7 +17,11 @@ class ConferenceController extends Controller
      */
     public function index()
     {
-        $conferences = Conference::all();
+        // Cache conferences for 10 minutes to improve performance
+        $conferences = Cache::remember('conferences.all', 600, function () {
+            return Conference::orderBy('start_date', 'desc')->get();
+        });
+        
         return response()->json($conferences);
     }
 
@@ -29,23 +33,27 @@ class ConferenceController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'required|string',
+                'start_date' => 'required|date',
+                'end_date' => 'required|date|after_or_equal:start_date',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
         }
 
         // Create conference data with generated slug
-        $conferenceData = $request->all();
-        $conferenceData['slug'] = Str::slug($request->name);
-        $conferenceData['status'] = $request->status ?? 'draft';
+        $conferenceData = $validated;
+        $conferenceData['slug'] = Str::slug($validated['name']);
+        $conferenceData['status'] = $validated['status'] ?? 'draft';
         
         $conference = Conference::create($conferenceData);
+        
+        // Forget cache when creating a new conference
+        Cache::forget('conferences.all');
+        
         return response()->json($conference, 201);
     }
 
@@ -57,7 +65,11 @@ class ConferenceController extends Controller
      */
     public function show($id)
     {
-        $conference = Conference::findOrFail($id);
+        // Cache individual conference for 10 minutes
+        $conference = Cache::remember("conferences.{$id}", 600, function () use ($id) {
+            return Conference::findOrFail($id);
+        });
+        
         return response()->json($conference);
     }
 
@@ -70,26 +82,30 @@ class ConferenceController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'sometimes|required|string',
-            'start_date' => 'sometimes|required|date',
-            'end_date' => 'sometimes|required|date|after_or_equal:start_date',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        try {
+            $validated = $request->validate([
+                'name' => 'sometimes|required|string|max:255',
+                'description' => 'sometimes|required|string',
+                'start_date' => 'sometimes|required|date',
+                'end_date' => 'sometimes|required|date|after_or_equal:start_date',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
         }
 
         $conference = Conference::findOrFail($id);
         
         // Update data with slug if name changed
-        $updateData = $request->all();
-        if ($request->has('name')) {
-            $updateData['slug'] = Str::slug($request->name);
+        $updateData = $validated;
+        if (isset($validated['name'])) {
+            $updateData['slug'] = Str::slug($validated['name']);
         }
         
         $conference->update($updateData);
+        
+        // Forget cache when updating a conference
+        Cache::forget("conferences.{$id}");
+        Cache::forget('conferences.all');
         
         return response()->json($conference);
     }
@@ -104,6 +120,10 @@ class ConferenceController extends Controller
     {
         $conference = Conference::findOrFail($id);
         $conference->delete();
+        
+        // Forget cache when deleting a conference
+        Cache::forget("conferences.{$id}");
+        Cache::forget('conferences.all');
         
         return response()->json(null, 204);
     }
