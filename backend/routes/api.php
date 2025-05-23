@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AdminPagesController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\EditorController;
+use App\Http\Controllers\Api\AdminStatsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Response;
@@ -37,7 +38,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Admin routes - Now using authorize helper in controllers directly
 Route::prefix('admin')->middleware(['auth:sanctum'])->group(function () {
-    Route::get('/stats', [AdminController::class, 'getStats']);
+    Route::get('/stats', [AdminStatsController::class, 'getStats']);
     Route::get('/pages', [AdminPagesController::class, 'getAllPages']);
     Route::get('/pages/counts', [AdminPagesController::class, 'getPageCountsByConference']);
 });

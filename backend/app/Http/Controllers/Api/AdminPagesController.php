@@ -16,15 +16,13 @@ class AdminPagesController extends Controller
 
     public function __construct()
     {
-        $this->middleware(['auth:sanctum']);
-        // Use authorize helper directly
+        $this->middleware('auth:sanctum');
+        
         $this->middleware(function ($request, $next) {
-            try {
-                authorize(fn($user) => $user->isAdmin());
-                return $next($request);
-            } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            if (!auth()->user()?->isAdmin()) {
                 return response()->json(['message' => 'Unauthorized'], 403);
             }
+            return $next($request);
         });
     }
 

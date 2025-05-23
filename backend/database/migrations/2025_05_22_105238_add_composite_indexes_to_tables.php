@@ -13,7 +13,9 @@ return new class extends Migration
     {
         // Add composite indexes to conferences table
         Schema::table('conferences', function (Blueprint $table) {
-            $table->index(['status', 'start_date']);
+            if (!$this->hasIndex('conferences', ['status', 'start_date'])) {
+                $table->index(['status', 'start_date']);
+            }
         });
         
         // Add composite index to pages table
@@ -32,5 +34,14 @@ return new class extends Migration
         Schema::table('conferences', function (Blueprint $table) {
             $table->dropIndex(['status', 'start_date']);
         });
+    }
+
+    /**
+     * Check if an index exists on a table
+     */
+    private function hasIndex($table, $columns)
+    {
+        $indexName = $table . '_' . implode('_', $columns) . '_index';
+        return Schema::hasIndex($table, $indexName);
     }
 };
