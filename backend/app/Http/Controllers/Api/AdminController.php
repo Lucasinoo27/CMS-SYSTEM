@@ -35,13 +35,18 @@ class AdminController extends Controller
      */
     public function getStats()
     {
-        $stats = [
-            'conferences' => Conference::count(),
-            'pages' => Page::count(),
-            'users' => User::count(),
-            'files' => FileUpload::count(),
-        ];
-        
-        return $this->successResponse($stats);
+        try {
+            $stats = [
+                'conferences' => Conference::count(),
+                'pages' => Page::count(),
+                'users' => User::count(),
+                'files' => FileUpload::whereNotNull('uploadable_id')->count(),
+            ];
+            
+            return $this->successResponse($stats);
+        } catch (\Exception $e) {
+            \Log::error('Error in AdminController@getStats: ' . $e->getMessage());
+            return $this->errorResponse('Failed to fetch statistics', 500);
+        }
     }
 }

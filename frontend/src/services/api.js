@@ -50,7 +50,8 @@ export const pageApi = {
   get: (id) => api.get(`/pages/${id}`),
   create: (data) => api.post('/pages', data),
   update: (id, data) => api.put(`/pages/${id}`, data),
-  delete: (id) => api.delete(`/pages/${id}`)
+  delete: (id) => api.delete(`/pages/${id}`),
+  getAssigned: () => api.get('/editor/pages')
 }
 
 export const userApi = {

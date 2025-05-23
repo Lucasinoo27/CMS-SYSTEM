@@ -28,7 +28,15 @@ const authService = {
       const response = await axios.post(`${API_URL}/login`, credentials);
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        
+        // Make sure user data is valid before storing
+        if (response.data.user && typeof response.data.user === 'object') {
+          try {
+            localStorage.setItem('user', JSON.stringify(response.data.user));
+          } catch (e) {
+            console.error('Failed to store user data:', e);
+          }
+        }
       }
       return response.data;
     } catch (error) {

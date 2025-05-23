@@ -83,27 +83,13 @@
         </div>
 
         <div class="block-content">
-          <!-- Text Block -->
+          <!-- Text Block with WYSIWYG Editor -->
           <div v-if="block.type === 'text'" class="text-editor">
-            <div class="editor-toolbar">
-              <button
-                v-for="format in textFormats"
-                :key="format.command"
-                type="button"
-                class="format-btn"
-                :class="{ active: isFormatActive(format.command) }"
-                @click="toggleFormat(format.command)"
-                :title="format.label"
-              >
-                <i :class="format.icon"></i>
-              </button>
-            </div>
-            <div
-              class="editor-content"
-              contenteditable="true"
-              @input="updateBlockContent($event, index)"
-              v-html="block.content"
-            ></div>
+            <WysiwygEditor 
+              v-model="block.content"
+              @image-upload="handleWysiwygImageUpload"
+              :publicMode="false"
+            />
           </div>
 
           <!-- Image Block -->
@@ -173,6 +159,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import FileUploader from './FileUploader.vue'
+import WysiwygEditor from './WysiwygEditor.vue'
 
 const props = defineProps({
   initialData: {
@@ -195,16 +182,6 @@ const form = reactive({
 
 const saving = ref(false)
 const error = ref('')
-
-const textFormats = [
-  { command: 'bold', icon: 'fas fa-bold', label: 'Bold' },
-  { command: 'italic', icon: 'fas fa-italic', label: 'Italic' },
-  { command: 'underline', icon: 'fas fa-underline', label: 'Underline' },
-  { command: 'strikeThrough', icon: 'fas fa-strikethrough', label: 'Strike Through' },
-  { command: 'insertUnorderedList', icon: 'fas fa-list-ul', label: 'Bullet List' },
-  { command: 'insertOrderedList', icon: 'fas fa-list-ol', label: 'Numbered List' },
-  { command: 'createLink', icon: 'fas fa-link', label: 'Insert Link' }
-]
 
 const addBlock = () => {
   form.blocks.push({
@@ -237,16 +214,9 @@ const updateBlockType = (index) => {
   form.blocks[index].content = ''
 }
 
-const updateBlockContent = (event, index) => {
-  form.blocks[index].content = event.target.innerHTML
-}
-
-const isFormatActive = (command) => {
-  return document.queryCommandState(command)
-}
-
-const toggleFormat = (command) => {
-  document.execCommand(command, false, null)
+const handleWysiwygImageUpload = (imageData) => {
+  // You can handle additional logic here if needed
+  console.log('Image uploaded via WYSIWYG editor:', imageData)
 }
 
 const handleMediaUpload = (files, index) => {

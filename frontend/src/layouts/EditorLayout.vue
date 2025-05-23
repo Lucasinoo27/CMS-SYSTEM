@@ -5,7 +5,7 @@
         <h1>CMS Editor</h1>
       </div>
       <div class="user-info">
-        <span>{{ user.name }}</span>
+        <span>{{ user?.name || 'User' }}</span>
         <button @click="logout">Logout</button>
       </div>
       <ul class="nav-links">
@@ -30,8 +30,15 @@ const authStore = useAuthStore()
 const { user } = storeToRefs(authStore)
 
 const logout = async () => {
-  await authStore.logout()
-  router.push('/login')
+  try {
+    await authStore.logout()
+    // Navigate after logout is complete
+    await router.push('/login')
+  } catch (error) {
+    console.error('Logout failed:', error)
+    // If logout fails, still try to navigate to login
+    router.push('/login')
+  }
 }
 </script>
 

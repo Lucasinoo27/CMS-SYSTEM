@@ -7,7 +7,8 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
+      '@': path.resolve(__dirname, './src'),
+      'tinymce': path.resolve(__dirname, 'node_modules/tinymce')
     }
   },
   server: {
@@ -22,10 +23,25 @@ export default defineConfig({
       clientPort: 8080,
     },
     fs: {
-      strict: false
+      strict: false,
+      allow: ['..']
     },
   },
   optimizeDeps: {
-    include: ['vue', 'vue-router', 'pinia', 'axios'],
+    include: ['vue', 'vue-router', 'pinia', 'axios', '@tinymce/tinymce-vue', 'tinymce'],
   },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        manualChunks: id => {
+          if (id.includes('node_modules/tinymce')) {
+            return 'tinymce';
+          }
+        }
+      }
+    }
+  },
+  publicDir: 'public'
 });

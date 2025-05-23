@@ -21,11 +21,30 @@ const initAuth = async () => {
   app.use(pinia)
   
   const authStore = useAuthStore(pinia)
+  
+  // Clear potentially corrupted localStorage data
+  try {
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      try {
+        JSON.parse(userData)
+      } catch (e) {
+        console.error('Corrupted user data in localStorage, clearing it')
+        localStorage.removeItem('user')
+      }
+    }
+  } catch (e) {
+    console.error('Error accessing localStorage:', e)
+  }
+  
+  // Try to initialize auth if token exists
   if (localStorage.getItem('token')) {
     try {
       await authStore.initializeAuth()
     } catch (error) {
       console.error('Failed to initialize auth:', error)
+      // Clear potentially corrupted auth data
+      authStore.clearAuth()
     }
   }
 

@@ -4,10 +4,12 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PageController;
 use App\Http\Controllers\Api\ContentController;
 use App\Http\Controllers\Api\FileUploadController;
+use App\Http\Controllers\Api\WysiwygUploadsController;
 use App\Http\Controllers\Api\ConferenceController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AdminPagesController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\EditorController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Response;
@@ -40,6 +42,13 @@ Route::prefix('admin')->middleware(['auth:sanctum'])->group(function () {
     Route::get('/pages/counts', [AdminPagesController::class, 'getPageCountsByConference']);
 });
 
+// Editor routes
+Route::prefix('editor')->middleware(['auth:sanctum'])->group(function () {
+    Route::get('/stats', [EditorController::class, 'getStats']);
+    Route::get('/activities', [EditorController::class, 'getActivities']);
+    Route::get('/pages', [EditorController::class, 'getAssignedPages']);
+});
+
 // Conference routes
 Route::apiResource('conferences', ConferenceController::class);
 
@@ -47,6 +56,14 @@ Route::apiResource('conferences', ConferenceController::class);
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('users', UserController::class);
 });
+
+// WYSIWYG Editor uploads
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::post('/uploads', [WysiwygUploadsController::class, 'upload']);
+});
+
+// Public uploads route for WYSIWYG editor
+Route::post('/uploads/public', [WysiwygUploadsController::class, 'publicUpload'])->name('wysiwyg.public.upload');
 
 // Basic placeholder routes for testing
 Route::get('/events', fn() => response()->json(['message' => 'Events endpoint working']));

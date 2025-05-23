@@ -4,20 +4,40 @@ import authService from "../services/authService";
 export const useAuthStore = defineStore("auth", {
   state: () => {
     let user = null;
+    let token = null;
+    let isAuthenticated = false;
+    
     try {
-      const userData = localStorage.getItem("user");
-      if (userData) {
-        user = JSON.parse(userData);
+      // Check if token exists and is valid
+      token = localStorage.getItem("token");
+      isAuthenticated = !!token;
+      
+      // Only try to parse user if token exists
+      if (token) {
+        const userData = localStorage.getItem("user");
+        if (userData && userData.trim()) {
+          try {
+            user = JSON.parse(userData);
+          } catch (parseError) {
+            console.error("Failed to parse user data from localStorage:", parseError);
+            // Clear invalid user data but keep token for now
+            localStorage.removeItem("user");
+          }
+        }
       }
     } catch (error) {
-      console.error("Failed to parse user data from localStorage:", error);
+      console.error("Error accessing localStorage:", error);
+      // Clear auth data in case of any error
       localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      token = null;
+      isAuthenticated = false;
     }
 
     return {
       user,
-      token: localStorage.getItem("token") || null,
-      isAuthenticated: !!localStorage.getItem("token"),
+      token,
+      isAuthenticated,
       loading: false,
       error: null,
     };
@@ -68,14 +88,14 @@ export const useAuthStore = defineStore("auth", {
       this.loading = true;
       this.error = null;
       try {
+        // First try to call the logout endpoint
         await authService.logout();
-        this.clearAuth();
       } catch (error) {
         console.error("Logout error:", error);
-        this.clearAuth();
-        this.error = error.message || "Logout failed";
-        throw error;
+        // Even if the API call fails, we still want to clear local auth
       } finally {
+        // Clear auth data after API call attempt
+        this.clearAuth();
         this.loading = false;
       }
     },
@@ -85,7 +105,16 @@ export const useAuthStore = defineStore("auth", {
         const response = await authService.getCurrentUser();
         this.user = response.user;
         this.isAuthenticated = true;
-        localStorage.setItem("user", JSON.stringify(response.user));
+        
+        // Safely store user data
+        try {
+          if (response.user && typeof response.user === 'object') {
+            localStorage.setItem("user", JSON.stringify(response.user));
+          }
+        } catch (storageError) {
+          console.error("Failed to store user data in localStorage:", storageError);
+        }
+        
         return response.user;
       } catch (error) {
         console.error("Failed to fetch user:", error);
@@ -118,20 +147,24 @@ export const useAuthStore = defineStore("auth", {
     async initializeAuth() {
       const token = localStorage.getItem("token");
 
-      if (token) {
-        this.token = token;
-        this.isAuthenticated = true;
-
-        try {
-          await this.fetchUser();
-          return true;
-        } catch (error) {
-          this.clearAuth();
-          throw error;
-        }
+      if (!token) {
+        return false;
       }
 
-      return false;
+      this.token = token;
+      this.isAuthenticated = true;
+      this.loading = true;
+
+      try {
+        await this.fetchUser();
+        this.loading = false;
+        return true;
+      } catch (error) {
+        console.error("Auth initialization failed:", error);
+        this.clearAuth();
+        this.loading = false;
+        return false;
+      }
     },
 
     clearAuth() {
