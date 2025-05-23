@@ -41,4 +41,12 @@ class Conference extends Model
     {
         return $this->belongsToMany(User::class, 'editor_conferences');
     }
+
+    /**
+     * Get the pages for the conference.
+     */
+    public function pages()
+    {
+        return $this->hasMany(Page::class);
+    }
 }

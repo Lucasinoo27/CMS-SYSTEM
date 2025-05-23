@@ -16,17 +16,8 @@ class PageController extends Controller
 
     public function __construct()
     {
-        $this->middleware(['auth:sanctum']);
-        // Use individual middleware instead of role middleware
-        $this->middleware(function ($request, $next) {
-            // Use new authorize helper function
-            try {
-                authorize(fn($user) => $user->isAdmin() || $user->isEditor());
-                return $next($request);
-            } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
-                return response()->json(['message' => 'Unauthorized'], 403);
-            }
-        })->except(['index', 'show']);
+        // Only protect non-public routes
+        $this->middleware(['auth:sanctum'])->except(['index', 'show']);
     }
 
     /**
@@ -36,7 +27,8 @@ class PageController extends Controller
     {
         $query = $conference->pages();
         
-        if (!Auth::user()->hasRole('admin') && !Auth::user()->hasRole('editor')) {
+        // For anonymous users, only show published pages
+        if (!Auth::check()) {
             $query->where('is_published', true);
         }
 
@@ -78,12 +70,9 @@ class PageController extends Controller
      */
     public function show(Conference $conference, Page $page)
     {
-        if (!$page->is_published) {
-            try {
-                authorize(fn($user) => $user->hasAnyRole(['admin', 'editor']));
-            } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
-                return $this->forbiddenResponse();
-            }
+        // For anonymous users, only show published pages
+        if (!Auth::check() && !$page->is_published) {
+            return $this->forbiddenResponse();
         }
 
         $page->load(['contents', 'creator', 'updater']);

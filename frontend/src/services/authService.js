@@ -77,6 +77,11 @@ const authService = {
    * @returns {Promise} - API response
    */
   getCurrentUser: async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return { user: null }; // Return null user for anonymous users
+    }
+    
     try {
       const response = await axios.get(`${API_URL}/user`);
       return response.data;

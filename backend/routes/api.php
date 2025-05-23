@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\AdminPagesController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\EditorController;
 use App\Http\Controllers\Api\AdminStatsController;
+use App\Http\Controllers\Api\ConferencePageController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Response;
@@ -71,9 +72,17 @@ Route::get('/events', fn() => response()->json(['message' => 'Events endpoint wo
 Route::get('/papers', fn() => response()->json(['message' => 'Papers endpoint working']));
 Route::middleware('auth:sanctum')->get('/user', fn(Request $request) => $request->user());
 
-// Conference Pages
+// Conference Pages (public routes for viewing)
 Route::prefix('conferences/{conference}')->group(function () {
-    Route::apiResource('pages', PageController::class);
+    Route::get('pages', [PageController::class, 'index']);
+    Route::get('pages/{page}', [PageController::class, 'show']);
+});
+
+// Conference Pages (protected routes for editing)
+Route::prefix('conferences/{conference}')->middleware(['auth:sanctum'])->group(function () {
+    Route::post('pages', [PageController::class, 'store']);
+    Route::put('pages/{page}', [PageController::class, 'update']);
+    Route::delete('pages/{page}', [PageController::class, 'destroy']);
     
     // Page Contents
     Route::prefix('pages/{page}')->group(function () {

@@ -7,6 +7,7 @@ import EditorLayout from '@/layouts/EditorLayout.vue';
 import LoginView from '../views/auth/LoginView.vue';
 import RegisterView from '../views/auth/RegisterView.vue';
 import LandingPage from '../views/LandingPage.vue';
+import ConferencePage from '../views/ConferencePage.vue';
 
 // Lazy-loaded views
 const ConferencesView = { template: "<div>Conferences Page</div>" };
@@ -29,6 +30,11 @@ const routes = [
     path: "/conferences",
     name: "conferences",
     component: ConferencesView,
+  },
+  {
+    path: "/conferences/:id",
+    name: "conference-page",
+    component: ConferencePage,
   },
   {
     path: "/login",

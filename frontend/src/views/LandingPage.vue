@@ -1,34 +1,67 @@
 <template>
   <div class="landing-container">
-    <div class="logo-section">
-      <h1 class="logo">University CMS</h1>
-      <div class="connection-status" :class="{ 'status-error': backendStatus !== 'Connected' }">
-        API Status: {{ backendStatus }}
+    <!-- Header Section -->
+    <header class="header">
+      <div class="header-content">
+        <h1 class="logo">University CMS</h1>
+        <div 
+          class="connection-status"
+          :class="{ 'status-error': backendStatus !== 'Connected' }"
+        >
+          API Status: {{ backendStatus }}
+        </div>
       </div>
-    </div>
-    
-    <div class="welcome-section">
-      <h2>Welcome to the University Consortium Management System</h2>
-      <p>A comprehensive platform for managing academic conferences, papers, and events</p>
-      <p>Collaborate with editors and administrators across multiple universities</p>
-    </div>
-    
-    <div class="auth-buttons">
-      <router-link to="/login" class="btn btn-primary">Login</router-link>
-      <router-link to="/register" class="btn btn-secondary">Register</router-link>
+    </header>
+
+    <!-- Hero Section -->
+    <div class="hero-section">
+      <div class="hero-content">
+        <h2>Welcome to the University Consortium</h2>
+        <p>A comprehensive platform for managing academic conferences, papers, and events</p>
+        <div class="auth-buttons">
+          <router-link to="/login" class="btn btn-primary">Login</router-link>
+          <router-link to="/register" class="btn btn-secondary">Register</router-link>
+        </div>
+      </div>
     </div>
 
     <!-- Conferences Section -->
     <div class="conferences-section">
       <h2>Upcoming Conferences</h2>
-      <div v-if="loading" class="loading">Loading conferences...</div>
-      <div v-else-if="error" class="error">{{ error }}</div>
+
+      <!-- Loading State -->
+      <div v-if="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading conferences...</p>
+      </div>
+
+      <!-- Error State -->
+      <div v-else-if="error" class="error-state">
+        <div class="error-icon">!</div>
+        <p>{{ error }}</p>
+      </div>
+
+      <!-- Conferences Grid -->
       <div v-else class="conferences-grid">
-        <div v-for="conference in conferences" :key="conference.id" class="conference-card">
+        <div 
+          v-for="conference in conferences" 
+          :key="conference.id" 
+          class="conference-card"
+          @click="navigateToConference(conference.id)"
+        >
           <h3>{{ conference.name }}</h3>
-          <p class="conference-date">{{ formatDate(conference.date) }}</p>
-          <p class="conference-location">{{ conference.location }}</p>
-          <p class="conference-description">{{ conference.description }}</p>
+          <div class="conference-details">
+            <p class="conference-date">
+              <span class="label">Date:</span> 
+              {{ formatDate(conference.start_date) }} - {{ formatDate(conference.end_date) }}
+            </p>
+            <p class="conference-location">
+              <span class="label">Location:</span> {{ conference.location }}
+            </p>
+            <p class="conference-description">
+              {{ conference.description }}
+            </p>
+          </div>
           <div class="conference-status" :class="conference.status.toLowerCase()">
             {{ conference.status }}
           </div>
@@ -38,145 +71,153 @@
   </div>
 </template>
 
-<script>
-import { onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/authStore';
-import axios from 'axios';
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
+import axios from 'axios'
 
-export default {
-  name: 'LandingPage',
-  setup() {
-    const router = useRouter();
-    const authStore = useAuthStore();
-    const backendStatus = ref('Checking connection...');
-    const conferences = ref([]);
-    const loading = ref(true);
-    const error = ref(null);
+const router = useRouter()
+const authStore = useAuthStore()
+const backendStatus = ref('Checking connection...')
+const conferences = ref([])
+const loading = ref(true)
+const error = ref(null)
 
-    const formatDate = (dateString) => {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    };
+const navigateToConference = (conferenceId) => {
+  router.push(`/conferences/${conferenceId}`)
+}
 
-    const fetchConferences = async () => {
-      try {
-        const response = await axios.get('/conferences');
-        conferences.value = response.data;
-        loading.value = false;
-      } catch (err) {
-        error.value = 'Failed to load conferences';
-        loading.value = false;
-        console.error('Error fetching conferences:', err);
-      }
-    };
-
-    onMounted(async () => {
-      try {
-        await axios.get('/health');
-        backendStatus.value = 'Connected';
-      } catch (error) {
-        backendStatus.value = 'Connection issue';
-        console.error('Backend connection issue:', error);
-      }
-      
-      // Fetch conferences
-      await fetchConferences();
-      
-      // Check if user is already authenticated
-      if (authStore.isAuthenticated) {
-        if (authStore.isAdmin) {
-          router.push('/admin/dashboard');
-        } else if (authStore.isEditor) {
-          router.push('/editor/dashboard');
-        } else {
-          router.push('/home');
-        }
-      }
-    });
-
-    return {
-      backendStatus,
-      conferences,
-      loading,
-      error,
-      formatDate
-    };
+const formatDate = (dateString) => {
+  if (!dateString) return 'Date not set'
+  
+  try {
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) {
+      return 'Invalid date'
+    }
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  } catch (error) {
+    return 'Invalid date'
   }
-};
+}
+
+const fetchConferences = async () => {
+  try {
+    const response = await axios.get('/conferences')
+    conferences.value = response.data
+    loading.value = false
+  } catch (err) {
+    error.value = 'Failed to load conferences'
+    loading.value = false
+    console.error('Error fetching conferences:', err)
+  }
+}
+
+onMounted(async () => {
+  try {
+    await axios.get('/health')
+    backendStatus.value = 'Connected'
+  } catch (error) {
+    backendStatus.value = 'Connection issue'
+    console.error('Backend connection issue:', error)
+  }
+  
+  await fetchConferences()
+  
+  if (authStore.isAuthenticated) {
+    if (authStore.isAdmin) {
+      router.push('/admin/dashboard')
+    } else if (authStore.isEditor) {
+      router.push('/editor/dashboard')
+    } else {
+      router.push('/home')
+    }
+  }
+})
 </script>
 
 <style scoped>
 .landing-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   min-height: 100vh;
-  padding: 20px;
   background-color: #f8f9fa;
 }
 
-.logo-section {
-  margin: 2rem 0;
-  text-align: center;
+.header {
+  background-color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 1rem 0;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .logo {
-  font-size: 2.5rem;
+  font-size: 1.5rem;
+  font-weight: bold;
   color: #333;
-  text-align: center;
 }
 
 .connection-status {
-  margin-top: 0.5rem;
-  font-size: 0.8rem;
-  color: #4caf50;
-  background-color: rgba(76, 175, 80, 0.1);
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  background-color: #e6f4ea;
+  color: #1e7e34;
 }
 
 .status-error {
-  color: #f44336;
-  background-color: rgba(244, 67, 54, 0.1);
+  background-color: #fbe9e7;
+  color: #d32f2f;
 }
 
-.welcome-section {
-  max-width: 800px;
+.hero-section {
+  background-color: white;
+  padding: 4rem 0;
+}
+
+.hero-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
   text-align: center;
-  margin-bottom: 2rem;
 }
 
-.welcome-section h2 {
-  font-size: 2rem;
+.hero-content h2 {
+  font-size: 2.5rem;
+  font-weight: bold;
   color: #333;
   margin-bottom: 1rem;
 }
 
-.welcome-section p {
-  font-size: 1.1rem;
-  color: #555;
-  margin-bottom: 0.5rem;
-  line-height: 1.5;
+.hero-content p {
+  font-size: 1.25rem;
+  color: #666;
+  margin-bottom: 2rem;
 }
 
 .auth-buttons {
   display: flex;
   gap: 1rem;
-  margin-bottom: 3rem;
+  justify-content: center;
 }
 
 .btn {
-  padding: 0.8rem 2rem;
-  font-size: 1rem;
-  border-radius: 4px;
-  text-decoration: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.375rem;
   font-weight: 500;
-  transition: all 0.3s ease;
+  text-decoration: none;
+  transition: all 0.2s;
 }
 
 .btn-primary {
@@ -199,46 +240,57 @@ export default {
   background-color: rgba(74, 108, 247, 0.1);
 }
 
-.features-section {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 2rem;
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.feature {
-  flex: 1;
-  min-width: 250px;
-  background-color: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  text-align: center;
-}
-
-.feature h3 {
-  color: #333;
-  margin-bottom: 0.8rem;
-}
-
-.feature p {
-  color: #666;
-  line-height: 1.4;
-}
-
 .conferences-section {
-  width: 100%;
   max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0 20px;
+  margin: 0 auto;
+  padding: 4rem 1rem;
 }
 
 .conferences-section h2 {
   text-align: center;
-  margin-bottom: 2rem;
+  font-size: 2rem;
+  font-weight: bold;
   color: #333;
+  margin-bottom: 2rem;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 2rem;
+}
+
+.spinner {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #4a6cf7;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-state {
+  text-align: center;
+  padding: 2rem;
+  color: #d32f2f;
+}
+
+.error-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background-color: #fbe9e7;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+  font-weight: bold;
 }
 
 .conferences-grid {
@@ -249,74 +301,72 @@ export default {
 
 .conference-card {
   background: white;
-  border-radius: 8px;
+  border-radius: 0.5rem;
   padding: 1.5rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
 }
 
 .conference-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-4px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .conference-card h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
   color: #333;
   margin-bottom: 1rem;
-  font-size: 1.2rem;
 }
 
-.conference-date {
-  color: #666;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
+.conference-details {
+  margin-bottom: 1rem;
 }
 
+.conference-date,
 .conference-location {
-  color: #4a6cf7;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  color: #666;
   margin-bottom: 0.5rem;
+}
+
+.label {
+  font-weight: 500;
+  color: #333;
 }
 
 .conference-description {
-  color: #555;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  color: #666;
   margin-bottom: 1rem;
-  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .conference-status {
   display: inline-block;
-  padding: 0.3rem 0.8rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 
-.conference-status.pending {
+.conference-status.active {
+  background-color: #e6f4ea;
+  color: #1e7e34;
+}
+
+.conference-status.upcoming {
   background-color: #fff3cd;
   color: #856404;
 }
 
-.conference-status.approved {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.conference-status.rejected {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-.loading {
-  text-align: center;
-  color: #666;
-  padding: 2rem;
-}
-
-.error {
-  text-align: center;
-  color: #dc3545;
-  padding: 2rem;
+.conference-status.completed {
+  background-color: #e2e3e5;
+  color: #383d41;
 }
 
 @media (max-width: 768px) {
@@ -324,18 +374,8 @@ export default {
     grid-template-columns: 1fr;
   }
   
-  .features-section {
-    flex-direction: column;
-  }
-  
-  .feature {
-    min-width: 100%;
-  }
-  
   .auth-buttons {
     flex-direction: column;
-    width: 100%;
-    max-width: 300px;
   }
   
   .btn {

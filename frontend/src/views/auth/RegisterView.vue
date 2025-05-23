@@ -1,5 +1,13 @@
 <template>
   <div class="register-container">
+    <nav class="navbar">
+      <div class="navbar-container">
+        <router-link to="/" class="home-link">
+          <i class="fas fa-home"></i>
+          <span>Home</span>
+        </router-link>
+      </div>
+    </nav>
     <h1 class="title">University Consortium CMS</h1>
     <div class="form-card">
       <h2>Register</h2>
@@ -221,5 +229,40 @@ label {
   padding: 12px;
   border-radius: 4px;
   margin-bottom: 20px;
+}
+
+.navbar {
+  background: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.navbar-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+}
+
+.home-link {
+  color: #2c3e50;
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  background: #f8f9fa;
+}
+
+.home-link i {
+  font-size: 1.1rem;
+}
+
+.home-link:hover {
+  color: #3498db;
+  background: #f1f3f5;
 }
 </style>

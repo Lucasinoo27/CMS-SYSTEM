@@ -103,18 +103,20 @@ export const useAuthStore = defineStore("auth", {
     async fetchUser() {
       try {
         const response = await authService.getCurrentUser();
-        this.user = response.user;
-        this.isAuthenticated = true;
-        
-        // Safely store user data
-        try {
-          if (response.user && typeof response.user === 'object') {
-            localStorage.setItem("user", JSON.stringify(response.user));
+        // Only update state if we got a valid user
+        if (response.user) {
+          this.user = response.user;
+          this.isAuthenticated = true;
+          
+          // Safely store user data
+          try {
+            if (response.user && typeof response.user === 'object') {
+              localStorage.setItem("user", JSON.stringify(response.user));
+            }
+          } catch (storageError) {
+            console.error("Failed to store user data in localStorage:", storageError);
           }
-        } catch (storageError) {
-          console.error("Failed to store user data in localStorage:", storageError);
         }
-        
         return response.user;
       } catch (error) {
         console.error("Failed to fetch user:", error);
@@ -124,14 +126,20 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async fetchCurrentUser() {
-      if (!this.token) return null;
+      if (!this.token) {
+        this.user = null;
+        this.isAuthenticated = false;
+        return null;
+      }
 
       this.loading = true;
       this.error = null;
       try {
         const response = await authService.getCurrentUser();
-        this.user = response.user;
-        localStorage.setItem("user", JSON.stringify(response.user));
+        if (response.user) {
+          this.user = response.user;
+          localStorage.setItem("user", JSON.stringify(response.user));
+        }
         return response.user;
       } catch (error) {
         this.error = error.message || "Failed to get user data";
