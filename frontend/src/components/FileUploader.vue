@@ -202,19 +202,6 @@ const formatFileSize = (bytes) => {
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString()
 }
-
-const fetchFiles = async () => {
-  try {
-    const response = await fileApi.getAll()
-    files.value = response.data
-  } catch (error) {
-    emit('upload-error', 'Failed to fetch files')
-  }
-}
-
-onMounted(() => {
-  fetchFiles()
-})
 </script>
 
 <style lang="scss" scoped>

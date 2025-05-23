@@ -5,8 +5,8 @@
         <h1>CMS Admin</h1>
       </div>
       <div class="user-info">
-        <span>{{ user.name }}</span>
-        <button @click="logout">Logout</button>
+        <span>{{ user?.name || 'Guest' }}</span>
+        <button @click="handleLogout">Logout</button>
       </div>
       <ul class="nav-links">
         <li><router-link to="/admin/dashboard">Dashboard</router-link></li>
@@ -31,9 +31,16 @@ const router = useRouter()
 const authStore = useAuthStore()
 const { user } = storeToRefs(authStore)
 
-const logout = async () => {
-  await authStore.logout()
-  router.push('/login')
+const handleLogout = async () => {
+  try {
+    await authStore.logout()
+    // Wait for the next tick to ensure state is cleared
+    await router.push('/login')
+  } catch (error) {
+    console.error('Logout error:', error)
+    // Force redirect to login even if there's an error
+    router.push('/login')
+  }
 }
 </script>
 

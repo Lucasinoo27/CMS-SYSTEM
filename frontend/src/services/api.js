@@ -63,7 +63,6 @@ export const userApi = {
 }
 
 export const fileApi = {
-  getAll: () => api.get('/files'),
   upload: (formData) => api.post('/files/upload', formData, {
     headers: {
       'Content-Type': 'multipart/form-data'

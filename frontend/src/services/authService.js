@@ -49,15 +49,26 @@ const authService = {
    * @returns {Promise} - API response
    */
   logout: async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return; // No token to logout with
+    }
+
     try {
-      const response = await axios.post(`${API_URL}/logout`);
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      // Set the token in headers for this specific request
+      const response = await axios.post(`${API_URL}/logout`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       return response.data;
     } catch (error) {
+      // Log the error but don't throw - we want to clear local state regardless
+      console.error('Logout API error:', error);
+    } finally {
+      // Always clear local storage, even if the API call fails
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      throw error.response?.data || { message: 'An error occurred during logout' };
     }
   },
 

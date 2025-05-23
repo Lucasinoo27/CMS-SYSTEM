@@ -137,10 +137,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { userApi } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
+const authStore = useAuthStore()
 const users = ref([])
 const loading = ref(false)
 const error = ref('')
@@ -176,18 +179,28 @@ const closeModal = () => {
 }
 
 const fetchUsers = async () => {
+  // Don't fetch if not authenticated
+  if (!authStore.isAuthenticated) {
+    users.value = []
+    return
+  }
+
   loading.value = true
   error.value = ''
   
   try {
     const response = await userApi.getAll()
     users.value = response.data
-    // Clear error on success
     error.value = ''
   } catch (err) {
     console.error('Error fetching users:', err)
+    if (err.response?.status === 401) {
+      // Redirect to login on auth error
+      router.push('/login')
+      return
+    }
     error.value = 'Failed to load users. Please try again.'
-    users.value = [] // Ensure users is empty if there's an error
+    users.value = []
   } finally {
     loading.value = false
   }
@@ -257,6 +270,12 @@ const deleteUser = async () => {
 
 onMounted(() => {
   fetchUsers()
+})
+
+// Cleanup on component unmount
+onBeforeUnmount(() => {
+  users.value = []
+  error.value = ''
 })
 </script>
 
