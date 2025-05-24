@@ -15,51 +15,24 @@
       </div>
 
       <div class="dashboard-cards">
-        <div class="card">
+        <div class="card" @click="navigateTo('/admin/conferences')" style="cursor: pointer;">
           <h3>Conferences</h3>
           <p>Manage all conferences in the system</p>
         </div>
-        <div class="card">
+        <div class="card" @click="navigateTo('/admin/pages')" style="cursor: pointer;">
+          <h3>Pages</h3>
+          <p>Manage pages across system</p>
+        </div>
+        <div class="card" @click="navigateTo('/admin/users')" style="cursor: pointer;">
           <h3>Users</h3>
           <p>Manage users and their roles</p>
         </div>
-        <div class="card">
-          <h3>Events</h3>
-          <p>Manage events across all conferences</p>
-        </div>
-        <div class="card">
-          <h3>Papers</h3>
-          <p>Review and manage submitted papers</p>
+        <div class="card" @click="navigateTo('/admin/files')" style="cursor: pointer;">
+          <h3>File Manager</h3>
+          <p>Upload files for certain event</p>
         </div>
       </div>
 
-      <div class="stats-grid">
-        <div class="stat-card">
-          <h3>Total Conferences</h3>
-          <div class="stat-value">{{ stats.conferences }}</div>
-        </div>
-        <div class="stat-card">
-          <h3>Active Pages</h3>
-          <div class="stat-value">{{ stats.pages }}</div>
-        </div>
-        <div class="stat-card">
-          <h3>Total Users</h3>
-          <div class="stat-value">{{ stats.users }}</div>
-        </div>
-        <div class="stat-card">
-          <h3>Uploaded Files</h3>
-          <div class="stat-value">{{ stats.files }}</div>
-        </div>
-      </div>
-
-      <div class="dashboard-section">
-        <ConferenceManager
-          title="Manage Conferences"
-          :canCreate="true"
-          :canDelete="true"
-          @refresh="fetchStats"
-        />
-      </div>
     </div>
   </div>
 </template>
@@ -68,13 +41,11 @@
 import { computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
-import ConferenceManager from '@/components/ConferenceManager.vue';
 import api from '@/services/api';
 
 export default {
   name: 'AdminDashboardView',
   components: {
-    ConferenceManager
   },
   setup() {
     const authStore = useAuthStore();
@@ -114,6 +85,10 @@ export default {
       }
     };
 
+    const navigateTo = (path) => {
+      router.push(path);
+    };
+
     onMounted(() => {
       fetchStats();
     });
@@ -122,7 +97,8 @@ export default {
       user,
       logout,
       stats,
-      fetchStats
+      fetchStats,
+      navigateTo
     };
   }
 }
@@ -173,27 +149,32 @@ export default {
 
 .dashboard-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
 }
 
 .card {
-  background-color: white;
+  padding: 1.5rem;
   border-radius: 8px;
-  padding: 25px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
-  cursor: pointer;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .card h3 {
-  margin-top: 0;
-  color: #4a6cf7;
+  margin: 0 0 0.5rem 0;
+  color: #2c3e50;
+}
+
+.card p {
+  margin: 0;
+  color: #666;
 }
 
 .stats-grid {

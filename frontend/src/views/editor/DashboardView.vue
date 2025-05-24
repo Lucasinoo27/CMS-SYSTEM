@@ -15,51 +15,15 @@
       </div>
 
       <div class="dashboard-cards">
-        <div class="card">
+        <div class="card" @click="navigateTo('/editor/content')" style="cursor: pointer;">
           <h3>My Conferences</h3>
           <p>Manage your assigned conferences</p>
         </div>
-        <div class="card">
-          <h3>Events</h3>
-          <p>Manage events for your conferences</p>
-        </div>
-        <div class="card">
-          <h3>Papers</h3>
-          <p>Review and manage submitted papers</p>
-        </div>
-        <div class="card">
-          <h3>Participants</h3>
-          <p>Manage conference participants</p>
+        <div class="card" @click="navigateTo('/editor/files')" style="cursor: pointer;">
+          <h3>Upload Files</h3>
+          <p>Upload files for conferences</p>
         </div>
       </div>
-    </div>
-
-    <div class="stats-grid">
-      <div class="stat-card">
-        <h3>My Conferences</h3>
-        <div class="stat-value">{{ stats.assignedConferences }}</div>
-      </div>
-      <div class="stat-card">
-        <h3>My Pages</h3>
-        <div class="stat-value">{{ stats.managedPages }}</div>
-      </div>
-      <div class="stat-card">
-        <h3>Content Blocks</h3>
-        <div class="stat-value">{{ stats.contentBlocks }}</div>
-      </div>
-      <div class="stat-card">
-        <h3>My Files</h3>
-        <div class="stat-value">{{ stats.uploadedFiles }}</div>
-      </div>
-    </div>
-
-    <div class="dashboard-section">
-      <ConferenceManager
-        title="My Assigned Conferences"
-        :canCreate="false"
-        :canDelete="false"
-        @refresh="fetchStats"
-      />
     </div>
 
     <div class="dashboard-section">
@@ -149,6 +113,10 @@ const formatDate = (date) => {
   return new Date(date).toLocaleString()
 }
 
+const navigateTo = (path) => {
+  router.push(path)
+}
+
 onMounted(() => {
   fetchStats()
   fetchActivities()
@@ -199,32 +167,31 @@ onMounted(() => {
 
   .dashboard-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 20px;
-    margin-bottom: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+  }
 
-    .card {
-      background-color: white;
-      border-radius: 8px;
-      padding: 25px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      transition: transform 0.3s, box-shadow 0.3s;
-      cursor: pointer;
+  .card {
+    padding: 1.5rem;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 
-      &:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-      }
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
 
-      h3 {
-        margin-top: 0;
-        color: #4a6cf7;
-      }
+    h3 {
+      margin: 0 0 0.5rem 0;
+      color: #2c3e50;
+    }
 
-      p {
-        margin: 0;
-        color: #666;
-      }
+    p {
+      margin: 0;
+      color: #666;
     }
   }
 

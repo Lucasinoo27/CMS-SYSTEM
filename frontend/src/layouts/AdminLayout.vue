@@ -4,10 +4,6 @@
       <div class="logo">
         <h1>CMS Admin</h1>
       </div>
-      <div class="user-info">
-        <span>{{ user?.name || 'Guest' }}</span>
-        <button @click="handleLogout">Logout</button>
-      </div>
       <ul class="nav-links">
         <li><router-link to="/admin/dashboard">Dashboard</router-link></li>
         <li><router-link to="/admin/conferences">Conferences</router-link></li>

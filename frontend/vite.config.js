@@ -16,7 +16,7 @@ export default defineConfig({
     port: 8080,
     watch: {
       usePolling: true,
-      interval: 300,
+      interval: 1000,
     },
     hmr: {
       host: 'localhost',
@@ -26,6 +26,13 @@ export default defineConfig({
       strict: false,
       allow: ['..']
     },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   },
   optimizeDeps: {
     include: ['vue', 'vue-router', 'pinia', 'axios', '@tinymce/tinymce-vue', 'tinymce'],

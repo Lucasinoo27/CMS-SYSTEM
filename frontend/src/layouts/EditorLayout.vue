@@ -4,10 +4,6 @@
       <div class="logo">
         <h1>CMS Editor</h1>
       </div>
-      <div class="user-info">
-        <span>{{ user?.name || 'User' }}</span>
-        <button @click="logout">Logout</button>
-      </div>
       <ul class="nav-links">
         <li><router-link to="/editor/dashboard">Dashboard</router-link></li>
         <li><router-link to="/editor/content">My Content</router-link></li>

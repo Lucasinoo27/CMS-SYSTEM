@@ -7,6 +7,14 @@
       </button>
     </div>
 
+    <div v-if="success" class="success-message">
+      {{ success }}
+    </div>
+
+    <div v-if="error" class="error-message">
+      {{ error }}
+    </div>
+
     <div class="users-grid">
       <div v-if="loading" class="loading">Loading users...</div>
       <div v-else-if="error" class="error">{{ error }}</div>
@@ -23,6 +31,15 @@
               <h3>{{ user.name }}</h3>
               <p class="user-email">{{ user.email }}</p>
               <span :class="['user-role', user.role]">{{ user.role }}</span>
+              <div v-if="user.role === 'editor' && user.conferences" class="user-conferences">
+                <p class="conferences-label">Assigned Conferences:</p>
+                <div class="conference-tags">
+                  <span v-if="user.conferences.length === 0" class="no-conferences">No conferences assigned</span>
+                  <span v-for="conf in user.conferences" :key="conf.id" class="conference-tag">
+                    {{ conf.name }}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
           <div class="user-actions">
@@ -32,13 +49,6 @@
               title="Edit User"
             >
               <i class="fas fa-edit"></i>
-            </button>
-            <button
-              class="btn-icon"
-              @click="toggleUserStatus(user)"
-              :title="user.active ? 'Deactivate' : 'Activate'"
-            >
-              <i :class="user.active ? 'fas fa-toggle-on' : 'fas fa-toggle-off'"></i>
             </button>
             <button
               class="btn-icon delete"
@@ -85,6 +95,26 @@
               <option value="admin">Admin</option>
               <option value="editor">Editor</option>
             </select>
+          </div>
+
+          <div class="form-group" v-if="form.role === 'editor'">
+            <label>Assigned Conferences</label>
+            <div class="conference-list">
+              <div v-if="loadingConferences" class="loading">Loading conferences...</div>
+              <div v-else-if="conferences.length === 0" class="empty">No conferences available</div>
+              <div v-else class="conference-grid">
+                <div v-for="conference in conferences" :key="conference.id" class="conference-item">
+                  <label class="conference-checkbox">
+                    <input
+                      type="checkbox"
+                      :value="Number(conference.id)"
+                      v-model="form.conference_ids"
+                    />
+                    <span>{{ conference.name }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="form-group" v-if="!isEditing">
@@ -137,10 +167,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, watch } from 'vue'
 import { userApi } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -154,12 +185,16 @@ const selectedUser = ref(null)
 const submitting = ref(false)
 const deleting = ref(false)
 const isEditing = ref(false)
+const conferences = ref([])
+const loadingConferences = ref(false)
+const success = ref('')
 
 const form = reactive({
   name: '',
   email: '',
   role: 'editor',
-  password: ''
+  password: '',
+  conference_ids: []
 })
 
 const resetForm = () => {
@@ -167,6 +202,7 @@ const resetForm = () => {
   form.email = ''
   form.role = 'editor'
   form.password = ''
+  form.conference_ids = []
   selectedUser.value = null
   isEditing.value = false
 }
@@ -176,6 +212,8 @@ const closeModal = () => {
   showEditModal.value = false
   showDeleteModal.value = false
   resetForm()
+  error.value = ''
+  success.value = ''
 }
 
 const fetchUsers = async () => {
@@ -190,7 +228,24 @@ const fetchUsers = async () => {
   
   try {
     const response = await userApi.getAll()
-    users.value = response.data
+    // Fetch conferences for each editor
+    const usersWithConferences = await Promise.all(
+      response.data.map(async (user) => {
+        if (user.role === 'editor') {
+          try {
+            const confResponse = await axios.get(`/users/${user.id}/conferences`)
+            user.conferences = confResponse.data
+          } catch (err) {
+            console.error(`Error fetching conferences for user ${user.id}:`, err)
+            user.conferences = []
+          }
+        } else {
+          user.conferences = []
+        }
+        return user
+      })
+    )
+    users.value = usersWithConferences
     error.value = ''
   } catch (err) {
     console.error('Error fetching users:', err)
@@ -206,13 +261,50 @@ const fetchUsers = async () => {
   }
 }
 
-const editUser = (user) => {
+const fetchConferences = async () => {
+  loadingConferences.value = true
+  try {
+    const response = await axios.get('/conferences')
+    conferences.value = response.data
+  } catch (err) {
+    console.error('Error fetching conferences:', err)
+  } finally {
+    loadingConferences.value = false
+  }
+}
+
+const fetchUserConferences = async (userId) => {
+  try {
+    const response = await axios.get(`/users/${userId}/conferences`)
+    // Ensure we're setting an array of numbers
+    form.conference_ids = response.data.map(c => Number(c.id))
+    console.log('Loaded conference IDs:', form.conference_ids)
+  } catch (err) {
+    console.error('Error fetching user conferences:', err)
+    form.conference_ids = []
+  }
+}
+
+const editUser = async (user) => {
   selectedUser.value = user
   form.name = user.name
   form.email = user.email
   form.role = user.role
   isEditing.value = true
   showEditModal.value = true
+  
+  // Reset conference IDs first
+  form.conference_ids = []
+  
+  if (user.role === 'editor') {
+    // If we already have the conferences data from the user card, use it
+    if (user.conferences && user.conferences.length > 0) {
+      form.conference_ids = user.conferences.map(c => Number(c.id))
+    } else {
+      // Otherwise fetch them
+      await fetchUserConferences(user.id)
+    }
+  }
 }
 
 const confirmDelete = (user) => {
@@ -222,27 +314,115 @@ const confirmDelete = (user) => {
 
 const handleSubmit = async () => {
   submitting.value = true
+  error.value = ''
+  success.value = ''
   
   try {
     if (isEditing.value) {
+      // Update user data
       await userApi.update(selectedUser.value.id, {
         name: form.name,
         email: form.email,
         role: form.role
       })
+      
+      // Update conference assignments if user is an editor
+      if (form.role === 'editor') {
+        try {
+          // Ensure conference_ids is an array of numbers
+          const conferenceIds = form.conference_ids.map(id => Number(id))
+          
+          console.log('Sending conference assignment request:', {
+            userId: selectedUser.value.id,
+            conferenceIds: conferenceIds
+          })
+          
+          const response = await axios.post(`/users/${selectedUser.value.id}/conferences`, {
+            conference_ids: conferenceIds
+          })
+          
+          console.log('Conference assignment response:', response.data)
+          
+          if (response.data.message === 'Conferences assigned successfully') {
+            success.value = 'User and conference assignments updated successfully'
+            await fetchUsers()
+            closeModal()
+          } else {
+            throw new Error(response.data.message || 'Unexpected response from server')
+          }
+        } catch (confError) {
+          console.error('Error assigning conferences:', {
+            error: confError,
+            response: confError.response?.data,
+            status: confError.response?.status
+          })
+          
+          // Handle specific error cases
+          if (confError.response?.status === 403) {
+            error.value = 'Only editors can be assigned to conferences'
+          } else if (confError.response?.status === 404) {
+            error.value = 'User not found'
+          } else if (confError.response?.data?.message) {
+            error.value = confError.response.data.message
+          } else {
+            error.value = 'Failed to assign conferences. Please try again.'
+          }
+          
+          // Don't return here, let the user update complete
+          success.value = 'User updated successfully'
+          await fetchUsers()
+          closeModal()
+        }
+      } else {
+        success.value = 'User updated successfully'
+        await fetchUsers()
+        closeModal()
+      }
     } else {
-      await userApi.create(form)
+      // Create new user
+      const response = await userApi.create(form)
+      
+      // Assign conferences if user is an editor
+      if (form.role === 'editor' && form.conference_ids.length > 0) {
+        try {
+          const conferenceIds = form.conference_ids.map(id => Number(id))
+          
+          const confResponse = await axios.post(`/users/${response.data.user.id}/conferences`, {
+            conference_ids: conferenceIds
+          })
+          
+          if (confResponse.data.message === 'Conferences assigned successfully') {
+            success.value = 'User created and conferences assigned successfully'
+            await fetchUsers()
+            closeModal()
+          } else {
+            throw new Error('Unexpected response from server')
+          }
+        } catch (confError) {
+          console.error('Error assigning conferences:', confError.response?.data || confError)
+          error.value = confError.response?.data?.message || 'User created but failed to assign conferences. Please try assigning conferences again.'
+          return
+        }
+      } else {
+        success.value = 'User created successfully'
+        await fetchUsers()
+        closeModal()
+      }
     }
-    
-    await fetchUsers()
-    closeModal()
   } catch (err) {
-    error.value = 'Failed to save user. Please try again.'
-    console.error('Error saving user:', err)
+    console.error('Error saving user:', err.response?.data || err)
+    error.value = err.response?.data?.message || 'Failed to save user. Please try again.'
   } finally {
     submitting.value = false
   }
 }
+
+// Watch for role changes to reset conference assignments
+watch(() => form.role, (newRole) => {
+  if (newRole !== 'editor') {
+    form.conference_ids = []
+  }
+})
 
 const toggleUserStatus = async (user) => {
   try {
@@ -270,6 +450,7 @@ const deleteUser = async () => {
 
 onMounted(() => {
   fetchUsers()
+  fetchConferences()
 })
 
 // Cleanup on component unmount
@@ -536,6 +717,83 @@ onBeforeUnmount(() => {
         background: #e74c3c;
         color: white;
       }
+    }
+  }
+
+  .conference-list {
+    margin-top: 0.5rem;
+    
+    .conference-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.5rem;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+    .conference-item {
+      .conference-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        
+        input[type="checkbox"] {
+          margin: 0;
+        }
+        
+        span {
+          font-size: 0.9rem;
+        }
+      }
+    }
+  }
+
+  .success-message {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+  }
+
+  .error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+  }
+
+  .user-conferences {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+
+    .conferences-label {
+      color: #666;
+      margin-bottom: 0.25rem;
+    }
+
+    .conference-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .conference-tag {
+      background-color: #e3f2fd;
+      color: #1976d2;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    .no-conferences {
+      color: #999;
+      font-style: italic;
     }
   }
 }
