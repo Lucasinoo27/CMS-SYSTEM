@@ -191,6 +191,12 @@ class UserController extends Controller
             $conferences = $user->conferences()
                 ->select('conferences.id', 'conferences.name', 'conferences.slug')
                 ->get();
+            
+            \Log::info('Fetched conferences for user', [
+                'user_id' => $id,
+                'conferences_count' => $conferences->count(),
+                'conferences' => $conferences->toArray()
+            ]);
                 
             return response()->json($conferences);
         } catch (\Exception $e) {
@@ -248,8 +254,8 @@ class UserController extends Controller
     {
         try {
             $validated = $request->validate([
-                'conference_ids' => 'required|array',
-                'conference_ids.*' => 'required|integer|exists:conferences,id'
+                'conference_ids' => 'array',
+                'conference_ids.*' => 'integer|exists:conferences,id'
             ]);
 
             $user = User::findOrFail($id);
@@ -257,8 +263,13 @@ class UserController extends Controller
             // Check if user is an editor
             $isEditor = $user->roles()->where('name', 'editor')->exists();
             if (!$isEditor) {
+                \Log::warning('Attempt to assign conferences to non-editor user', [
+                    'user_id' => $id,
+                    'email' => $user->email
+                ]);
                 return response()->json([
-                    'message' => 'Only editors can be assigned to conferences'
+                    'message' => 'Only editors can be assigned to conferences',
+                    'user_role' => $user->roles()->pluck('name')->first()
                 ], 403);
             }
 
@@ -266,30 +277,57 @@ class UserController extends Controller
             DB::beginTransaction();
             
             try {
+                // Log the conference assignment attempt
+                \Log::info('Attempting to assign conferences', [
+                    'user_id' => $id,
+                    'conference_ids' => $validated['conference_ids'] ?? []
+                ]);
+
                 // Sync the conferences (this will remove any existing assignments and add new ones)
-                $user->conferences()->sync($validated['conference_ids']);
+                $user->conferences()->sync($validated['conference_ids'] ?? []);
                 
-                // Get the updated conferences
+                // Get the updated conferences with all necessary fields
                 $conferences = $user->conferences()
                     ->select('conferences.id', 'conferences.name', 'conferences.slug')
                     ->get();
                 
                 DB::commit();
                 
+                \Log::info('Successfully assigned conferences', [
+                    'user_id' => $id,
+                    'assigned_conferences' => $conferences->pluck('name'),
+                    'conference_count' => $conferences->count()
+                ]);
+
                 return response()->json([
                     'message' => 'Conferences assigned successfully',
-                    'conferences' => $conferences
+                    'conferences' => $conferences,
+                    'conference_count' => $conferences->count()
                 ]);
             } catch (\Exception $e) {
                 DB::rollBack();
+                \Log::error('Database error while assigning conferences', [
+                    'user_id' => $id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
                 throw $e;
             }
         } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::warning('Validation error in conference assignment', [
+                'errors' => $e->errors(),
+                'user_id' => $id
+            ]);
             return response()->json(['errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            \Log::error('Error in assignConferences: ' . $e->getMessage());
+            \Log::error('Error in assignConferences', [
+                'user_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
-                'message' => 'Failed to assign conferences: ' . $e->getMessage()
+                'message' => 'Failed to assign conferences: ' . $e->getMessage(),
+                'error_details' => $e->getMessage()
             ], 500);
         }
     }

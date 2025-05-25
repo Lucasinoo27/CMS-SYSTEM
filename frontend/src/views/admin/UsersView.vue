@@ -108,7 +108,8 @@
                     <input
                       type="checkbox"
                       :value="Number(conference.id)"
-                      v-model="form.conference_ids"
+                      :checked="form.conference_ids.includes(Number(conference.id))"
+                      @change="(e) => handleConferenceSelection(conference.id, e.target.checked)"
                     />
                     <span>{{ conference.name }}</span>
                   </label>
@@ -197,6 +198,25 @@ const form = reactive({
   conference_ids: []
 })
 
+// Initialize selectedConferences as a reactive ref with a Set
+const selectedConferences = ref(new Set())
+
+// Add a method to handle conference selection
+const handleConferenceSelection = (conferenceId, isChecked) => {
+  const id = Number(conferenceId)
+  if (isChecked) {
+    if (!form.conference_ids.includes(id)) {
+      form.conference_ids.push(id)
+    }
+  } else {
+    const index = form.conference_ids.indexOf(id)
+    if (index > -1) {
+      form.conference_ids.splice(index, 1)
+    }
+  }
+  console.log('Updated conference IDs:', form.conference_ids)
+}
+
 const resetForm = () => {
   form.name = ''
   form.email = ''
@@ -234,7 +254,9 @@ const fetchUsers = async () => {
         if (user.role === 'editor') {
           try {
             const confResponse = await axios.get(`/users/${user.id}/conferences`)
-            user.conferences = confResponse.data
+            // Ensure we're setting the conferences array properly
+            user.conferences = Array.isArray(confResponse.data) ? confResponse.data : []
+            console.log(`Fetched conferences for user ${user.id}:`, user.conferences)
           } catch (err) {
             console.error(`Error fetching conferences for user ${user.id}:`, err)
             user.conferences = []
@@ -329,8 +351,8 @@ const handleSubmit = async () => {
       // Update conference assignments if user is an editor
       if (form.role === 'editor') {
         try {
-          // Ensure conference_ids is an array of numbers
-          const conferenceIds = form.conference_ids.map(id => Number(id))
+          // Ensure we have the latest conference IDs
+          const conferenceIds = [...form.conference_ids]
           
           console.log('Sending conference assignment request:', {
             userId: selectedUser.value.id,
@@ -344,8 +366,14 @@ const handleSubmit = async () => {
           console.log('Conference assignment response:', response.data)
           
           if (response.data.message === 'Conferences assigned successfully') {
+            // Update the user's conferences in the local state
+            const userIndex = users.value.findIndex(u => u.id === selectedUser.value.id)
+            if (userIndex !== -1) {
+              users.value[userIndex].conferences = response.data.conferences
+            }
+            
             success.value = 'User and conference assignments updated successfully'
-            await fetchUsers()
+            await fetchUsers() // Refresh the entire user list
             closeModal()
           } else {
             throw new Error(response.data.message || 'Unexpected response from server')
@@ -354,7 +382,9 @@ const handleSubmit = async () => {
           console.error('Error assigning conferences:', {
             error: confError,
             response: confError.response?.data,
-            status: confError.response?.status
+            status: confError.response?.status,
+            message: confError.message,
+            stack: confError.stack
           })
           
           // Handle specific error cases
@@ -362,6 +392,8 @@ const handleSubmit = async () => {
             error.value = 'Only editors can be assigned to conferences'
           } else if (confError.response?.status === 404) {
             error.value = 'User not found'
+          } else if (confError.response?.status === 422) {
+            error.value = 'Invalid conference data: ' + JSON.stringify(confError.response.data.errors)
           } else if (confError.response?.data?.message) {
             error.value = confError.response.data.message
           } else {
@@ -385,7 +417,7 @@ const handleSubmit = async () => {
       // Assign conferences if user is an editor
       if (form.role === 'editor' && form.conference_ids.length > 0) {
         try {
-          const conferenceIds = form.conference_ids.map(id => Number(id))
+          const conferenceIds = [...form.conference_ids]
           
           const confResponse = await axios.post(`/users/${response.data.user.id}/conferences`, {
             conference_ids: conferenceIds
