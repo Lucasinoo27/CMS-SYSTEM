@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Page extends Model
 {
@@ -15,14 +16,14 @@ class Page extends Model
         'slug',
         'meta_description',
         'layout',
-        'is_published',
+        'status',
         'conference_id',
         'created_by',
         'updated_by'
     ];
 
     protected $casts = [
-        'is_published' => 'boolean',
+        'status' => 'string',
     ];
 
     /**

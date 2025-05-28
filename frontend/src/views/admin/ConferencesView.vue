@@ -1,9 +1,9 @@
 <template>
   <div class="conferences-view">
-    <div class="page-header">
+    <header class="page-header">
       <h1>Conference Management</h1>
-      <p>Manage all conferences in the system</p>
-    </div>
+      <p class="page-description">Manage all conferences in the system</p>
+    </header>
 
     <div class="conferences-container">
       <ConferenceManager
@@ -22,58 +22,62 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import ConferenceManager from '@/components/ConferenceManager.vue'
+import { ref, watch } from "vue";
+import ConferenceManager from "@/components/ConferenceManager.vue";
 
-const showNotification = ref(false)
-const notificationMessage = ref('')
-const notificationType = ref('success')
+const showNotification = ref(false);
+const notificationMessage = ref("");
+const notificationType = ref("success");
 
+// We'll let the ConferenceManager handle its own notifications
 const handleRefresh = () => {
-  notificationMessage.value = 'Conferences updated successfully'
-  notificationType.value = 'success'
-  showNotification.value = true
-}
+  // No longer show automatic notification on refresh
+};
 
 const closeNotification = () => {
-  showNotification.value = false
-}
+  showNotification.value = false;
+};
 
 // Auto-hide notifications after 5 seconds
-const hideNotificationTimer = ref(null)
+const hideNotificationTimer = ref(null);
 watch(showNotification, (newValue) => {
   if (newValue && hideNotificationTimer.value) {
-    clearTimeout(hideNotificationTimer.value)
+    clearTimeout(hideNotificationTimer.value);
   }
   if (newValue) {
     hideNotificationTimer.value = setTimeout(() => {
-      showNotification.value = false
-    }, 5000)
+      showNotification.value = false;
+    }, 5000);
   }
-})
+});
 </script>
 
 <style lang="scss" scoped>
 .conferences-view {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+
   .page-header {
-    margin-bottom: 2rem;
+    margin-bottom: 40px;
 
     h1 {
-      margin: 0 0 0.5rem;
+      margin-bottom: 10px;
       color: #2c3e50;
     }
 
-    p {
-      margin: 0;
-      color: #7f8c8d;
+    .page-description {
+      color: #6c757d;
+      font-size: 1.1rem;
     }
   }
 
   .conferences-container {
     background: white;
-    padding: 2rem;
+    padding: 1.5rem;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 100%;
   }
 
   .notification {
@@ -88,6 +92,7 @@ watch(showNotification, (newValue) => {
     gap: 1rem;
     z-index: 1000;
     animation: slideIn 0.3s ease;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
 
     &.success {
       background: #2ecc71;
@@ -124,4 +129,4 @@ watch(showNotification, (newValue) => {
     opacity: 1;
   }
 }
-</style> 
+</style>

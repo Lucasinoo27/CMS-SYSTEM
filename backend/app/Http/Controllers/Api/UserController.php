@@ -225,9 +225,10 @@ class UserController extends Controller
             $conferences = $user->conferences()
                 ->with(['pages' => function($query) {
                     $query->select('id', 'conference_id', 'title', 'slug', 'status', 'updated_at')
-                        ->orderBy('updated_at', 'desc');
+                        ->orderBy('title', 'asc');
                 }])
                 ->select('conferences.id', 'conferences.name', 'conferences.slug')
+                ->orderBy('conferences.name', 'asc')
                 ->get();
             
             \Log::info('Found ' . $conferences->count() . ' conferences for user ' . $user->id);

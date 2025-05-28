@@ -33,49 +33,49 @@ class PageSeeder extends Seeder
                 'title' => 'About',
                 'meta_description' => 'Information about the conference, its history, and organizing committee.',
                 'layout' => 'default',
-                'is_published' => true,
+                'status' => 'published',
             ],
             [
                 'title' => 'Program',
                 'meta_description' => 'Conference program, schedule, and sessions information.',
                 'layout' => 'full-width',
-                'is_published' => true,
+                'status' => 'draft',
             ],
             [
                 'title' => 'Speakers',
                 'meta_description' => 'Information about keynote speakers and presenters.',
                 'layout' => 'sidebar',
-                'is_published' => true,
+                'status' => 'draft',
             ],
             [
                 'title' => 'Registration',
                 'meta_description' => 'Registration information, deadlines, and fees.',
                 'layout' => 'default',
-                'is_published' => true,
+                'status' => 'draft',
             ],
             [
                 'title' => 'Venue',
                 'meta_description' => 'Conference venue, accommodations, and travel information.',
                 'layout' => 'sidebar',
-                'is_published' => true,
+                'status' => 'draft',
             ],
             [
                 'title' => 'Call for Papers',
                 'meta_description' => 'Information about submitting papers and research to the conference.',
                 'layout' => 'default', 
-                'is_published' => true,
+                'status' => 'draft',
             ],
             [
                 'title' => 'Sponsors',
                 'meta_description' => 'Organizations and institutions sponsoring the conference.',
                 'layout' => 'full-width',
-                'is_published' => false, // Draft page
+                'status' => 'draft',
             ],
             [
                 'title' => 'Travel Information',
                 'meta_description' => 'Practical information for traveling to the conference.',
                 'layout' => 'sidebar',
-                'is_published' => false, // Draft page
+                'status' => 'draft',
             ],
         ];
         
@@ -90,7 +90,7 @@ class PageSeeder extends Seeder
                     'slug' => $conference->slug . '-' . Str::slug($template['title']),
                     'meta_description' => $template['meta_description'],
                     'layout' => $template['layout'],
-                    'is_published' => $template['is_published'],
+                    'status' => $template['status'],
                     'conference_id' => $conference->id,
                     'created_by' => $creator->id,
                     'updated_by' => $creator->id,

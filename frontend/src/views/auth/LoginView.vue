@@ -2,10 +2,6 @@
   <div class="login-container">
     <nav class="navbar">
       <div class="navbar-container">
-        <router-link to="/" class="home-link">
-          <i class="fas fa-home"></i>
-          <span>Home</span>
-        </router-link>
       </div>
     </nav>
     <h1 class="title">University Consortium CMS</h1>
@@ -42,15 +38,19 @@
           {{ loading ? 'Logging in...' : 'Login' }}
         </button>
       </form>
-
+      
       <p class="redirect-text">
         Don't have an account?<a
-          @click.prevent="$router.push('/register')"
-          href="#"
-          >Register</a
+        @click.prevent="$router.push('/register')"
+        href="#"
+        >Register</a
         >
       </p>
     </div>
+    <router-link to="/" class="home-link">
+      <i class="fas fa-home"></i>
+      <span>Home</span>
+    </router-link>
   </div>
 </template>
 
@@ -214,6 +214,7 @@ const handleLogin = async () => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
+  margin-top: 2rem;
   border-radius: 6px;
   background: #f8f9fa;
 }

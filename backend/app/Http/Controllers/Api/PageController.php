@@ -9,6 +9,7 @@ use App\Models\Conference;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class PageController extends Controller
 {
@@ -29,7 +30,7 @@ class PageController extends Controller
         
         // For anonymous users, only show published pages
         if (!Auth::check()) {
-            $query->where('is_published', true);
+            $query->where('status', 'published');
         }
 
         $pages = $query->with(['contents', 'creator'])
@@ -49,19 +50,52 @@ class PageController extends Controller
                 'title' => 'required|string|max:255',
                 'meta_description' => 'nullable|string|max:255',
                 'layout' => 'required|string|in:default,full-width,sidebar',
-                'is_published' => 'boolean'
+                'status' => 'required|string|in:draft,published',
+                'blocks' => 'array',
+                'blocks.*.type' => 'required|string|in:text,image,video,file',
+                'blocks.*.content' => 'nullable',
+                'blocks.*.alt' => 'nullable|string',
+                'blocks.*.embed' => 'nullable|string',
+                'blocks.*.fileName' => 'nullable|string'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return $this->errorResponse($e->errors()->first(), 422);
         }
 
-        $page = new Page($validated);
-        $page->slug = Str::slug($validated['title']);
-        $page->conference_id = $conference->id;
-        $page->created_by = Auth::id();
-        $page->updated_by = Auth::id();
-        $page->save();
+        // Extract blocks from the validated data
+        $blocks = $validated['blocks'] ?? [];
+        unset($validated['blocks']);
 
+        // Create the page with proper data
+        $pageData = $validated;
+        $pageData['slug'] = Str::slug($validated['title']);
+        $pageData['conference_id'] = $conference->id;
+        $pageData['created_by'] = Auth::id();
+        $pageData['updated_by'] = Auth::id();
+        
+        $page = Page::create($pageData);
+
+        // Save the blocks as Content records
+        if (!empty($blocks)) {
+            foreach ($blocks as $index => $block) {
+                $content = new \App\Models\Content([
+                    'type' => $block['type'],
+                    'content' => $block['content'] ?? '',
+                    'title' => $block['alt'] ?? '',
+                    'order' => $index,
+                    'settings' => [
+                        'alt' => $block['alt'] ?? '',
+                        'embed' => $block['embed'] ?? '',
+                        'fileName' => $block['fileName'] ?? ''
+                    ],
+                    'created_by' => Auth::id(),
+                    'updated_by' => Auth::id()
+                ]);
+                $page->contents()->save($content);
+            }
+        }
+
+        Cache::forget('admin.pages.all');
         return $this->successResponse($page, 'Page created successfully', 201);
     }
 
@@ -71,7 +105,7 @@ class PageController extends Controller
     public function show(Conference $conference, Page $page)
     {
         // For anonymous users, only show published pages
-        if (!Auth::check() && !$page->is_published) {
+        if (!Auth::check() && $page->status !== 'published') {
             return $this->forbiddenResponse();
         }
 
@@ -87,13 +121,23 @@ class PageController extends Controller
         try {
             $validated = $request->validate([
                 'title' => 'sometimes|required|string|max:255',
-                'meta_description' => 'nullable|string|max:255',
                 'layout' => 'sometimes|required|string|in:default,full-width,sidebar',
-                'is_published' => 'boolean'
+                'meta_description' => 'nullable|string|max:255',
+                'status' => 'sometimes|required|string|in:draft,published',
+                'blocks' => 'array',
+                'blocks.*.type' => 'required|string|in:text,image,video,file',
+                'blocks.*.content' => 'nullable',
+                'blocks.*.alt' => 'nullable|string',
+                'blocks.*.embed' => 'nullable|string',
+                'blocks.*.fileName' => 'nullable|string'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return $this->errorResponse($e->errors()->first(), 422);
         }
+
+        // Extract blocks from the validated data
+        $blocks = $validated['blocks'] ?? [];
+        unset($validated['blocks']);
 
         if (isset($validated['title'])) {
             $page->slug = Str::slug($validated['title']);
@@ -103,6 +147,30 @@ class PageController extends Controller
         $page->updated_by = Auth::id();
         $page->save();
 
+        // Update content blocks
+        if (!empty($blocks)) {
+            // Delete existing content
+            $page->contents()->delete();
+            
+            // Create new content blocks
+            foreach ($blocks as $index => $block) {
+                $content = new \App\Models\Content([
+                    'type' => $block['type'],
+                    'content' => $block['content'] ?? '',
+                    'title' => $block['alt'] ?? '',
+                    'order' => $index,
+                    'settings' => [
+                        'alt' => $block['alt'] ?? '',
+                        'embed' => $block['embed'] ?? '',
+                        'fileName' => $block['fileName'] ?? ''
+                    ],
+                    'created_by' => Auth::id(),
+                    'updated_by' => Auth::id()
+                ]);
+                $page->contents()->save($content);
+            }
+        }
+        
         return $this->successResponse($page, 'Page updated successfully');
     }
 

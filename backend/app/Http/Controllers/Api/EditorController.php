@@ -114,16 +114,21 @@ class EditorController extends Controller
             $query->where('user_id', $user->id);
         })
         ->with(['conference', 'creator'])
-        ->orderBy('created_at', 'desc')
+        ->orderBy('title', 'asc')
         ->get()
         ->map(function ($page) {
             return [
                 'id' => $page->id,
                 'title' => $page->title,
                 'slug' => $page->slug,
-                'conference_name' => $page->conference->name,
-                'status' => $page->is_published ? 'published' : 'draft',
-                'updated_at' => $page->updated_at
+                'status' => $page->status,
+                'updated_at' => $page->updated_at,
+                'created_at' => $page->created_at,
+                'blocks' => $page->contents,
+                'conference' => [
+                    'id' => $page->conference->id,
+                    'name' => $page->conference->name
+                ]
             ];
         });
         

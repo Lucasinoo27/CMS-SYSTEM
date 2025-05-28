@@ -2,10 +2,6 @@
   <div class="register-container">
     <nav class="navbar">
       <div class="navbar-container">
-        <router-link to="/" class="home-link">
-          <i class="fas fa-home"></i>
-          <span>Home</span>
-        </router-link>
       </div>
     </nav>
     <h1 class="title">University Consortium CMS</h1>
@@ -18,62 +14,66 @@
         <div class="form-group">
           <label for="name">Full Name</label>
           <input
-            id="name"
-            v-model="form.name"
-            type="text"
-            class="form-control"
-            required
-            placeholder="Enter your full name"
+          id="name"
+          v-model="form.name"
+          type="text"
+          class="form-control"
+          required
+          placeholder="Enter your full name"
           />
         </div>
-
+        
         <div class="form-group">
           <label for="email">Email</label>
           <input
-            id="email"
-            v-model="form.email"
-            type="email"
-            class="form-control"
-            required
-            placeholder="Enter your email"
+          id="email"
+          v-model="form.email"
+          type="email"
+          class="form-control"
+          required
+          placeholder="Enter your email"
           />
         </div>
-
+        
         <div class="form-group">
           <label for="password">Password</label>
           <input
-            id="password"
-            v-model="form.password"
-            type="password"
-            class="form-control"
-            required
-            placeholder="Enter your password"
+          id="password"
+          v-model="form.password"
+          type="password"
+          class="form-control"
+          required
+          placeholder="Enter your password"
           />
         </div>
-
+        
         <div class="form-group">
           <label for="password_confirmation">Confirm Password</label>
           <input
-            id="password_confirmation"
-            v-model="form.password_confirmation"
-            type="password"
-            class="form-control"
-            required
-            placeholder="Confirm your password"
+          id="password_confirmation"
+          v-model="form.password_confirmation"
+          type="password"
+          class="form-control"
+          required
+          placeholder="Confirm your password"
           />
         </div>
-
+        
         <div class="form-actions">
           <button type="submit" class="btn-primary" :disabled="loading">
             {{ loading ? 'Registering...' : 'Register' }}
           </button>
         </div>
-
+        
         <div class="form-footer">
           <p>Already have an account? <router-link to="/login">Login</router-link></p>
         </div>
       </form>
     </div>
+    <router-link to="/" class="home-link">
+      <i class="fas fa-home"></i>
+      <span>Home</span>
+    </router-link>
   </div>
 </template>
 
@@ -253,6 +253,7 @@ label {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
+  margin-top: 2rem;
   border-radius: 6px;
   background: #f8f9fa;
 }

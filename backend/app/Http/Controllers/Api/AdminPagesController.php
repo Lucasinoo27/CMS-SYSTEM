@@ -37,7 +37,7 @@ class AdminPagesController extends Controller
         $data = Cache::remember('admin.pages.all', 300, function () {
             // Get all pages with their related conference using eager loading
             $pages = Page::with(['conference', 'creator'])
-                ->orderBy('created_at', 'desc')
+                ->orderBy('title', 'asc')
                 ->get()
                 ->map(function ($page) {
                     return [
@@ -46,7 +46,7 @@ class AdminPagesController extends Controller
                         'slug' => $page->slug,
                         'meta_description' => $page->meta_description,
                         'layout' => $page->layout,
-                        'is_published' => $page->is_published,
+                        'status' => $page->status,
                         'conference_id' => $page->conference_id,
                         'conference_name' => $page->conference->name,
                         'created_by' => $page->creator ? $page->creator->name : null,
@@ -55,8 +55,7 @@ class AdminPagesController extends Controller
                     ];
                 });
 
-            // Get all conferences
-            $conferences = Conference::orderBy('name')->get(['id', 'name', 'slug']);
+            $conferences = Conference::orderBy('name', 'asc')->get(['id', 'name', 'slug']);
 
             return [
                 'pages' => $pages,

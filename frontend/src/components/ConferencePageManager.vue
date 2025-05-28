@@ -1,48 +1,57 @@
 <template>
-  <div class="conference-page-manager">
-    <div class="header">
+  <div class='conference-page-manager'>
+    <div class='header'>
       <h2>{{ title }}</h2>
     </div>
 
     <!-- Loading and Error States -->
-    <div v-if="loading" class="loading">Loading conferences and pages...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    
+    <div v-if='loading' class='loading'>Loading conferences and pages...</div>
+    <div v-else-if='error' class='error'>{{ error }}</div>
+
     <!-- Conference Cards with Page Counts -->
-    <div v-else-if="conferences.length === 0" class="empty">
+    <div v-else-if='conferences.length === 0' class='empty'>
       No conferences found. Create a conference first to add pages.
     </div>
-    <div v-else class="conference-grid">
-      <div v-for="conference in conferences" :key="conference.id" class="conference-card">
-        <div class="conference-info" @click="toggleConferencePages(conference.id)">
+    <div v-else class='conference-grid'>
+      <div v-for='conference in conferences' :key='conference.id' class='conference-card'>
+        <div class='conference-info' @click='toggleConferencePages(conference.id)'>
           <h3>{{ conference.name }}</h3>
-          <div class="page-count">
+          <div class='page-count'>
             <span>{{ getConferencePageCount(conference.id) }} Pages</span>
-            <i class="expand-icon" :class="{'expanded': expandedConferences.includes(conference.id)}">▼</i>
+            <i class='expand-icon' :class='{ expanded: expandedConferences.includes(conference.id) }'>▼</i>
           </div>
         </div>
 
         <!-- Pages List (collapsible) -->
-        <div v-if="expandedConferences.includes(conference.id)" class="pages-list">
-          <div class="pages-header">
+        <div v-if='expandedConferences.includes(conference.id)' class='pages-list'>
+          <div class='pages-header'>
             <h4>Pages</h4>
-            <button @click="showCreatePageModal = true; selectedConference = conference" class="btn-primary">
+            <button @click="
+              showCreatePageModal = true
+            selectedConference = conference
+            ' class='btn - primary">
               Add Page
             </button>
           </div>
-          
-          <div v-if="getConferencePages(conference.id).length === 0" class="empty-pages">
+
+          <div v-if='getConferencePages(conference.id).length === 0' class='empty-pages'>
             No pages found for this conference.
           </div>
-          <div v-else class="page-items">
-            <div v-for="page in getConferencePages(conference.id)" :key="page.id" class="page-item">
-              <div class="page-title">
-                <span :class="{'draft': !page.is_published}">{{ page.title }}</span>
-                <span v-if="!page.is_published" class="draft-label">Draft</span>
+          <div v-else class='page-items'>
+            <div v-for='page in getConferencePages(conference.id)' :key='page.id' class='page-item'>
+              <div class='page-title'>
+                <span :class='{ draft: page.status === ' draft' }'>{{
+                  page.title
+                }}</span>
+                <span v-if='page.status === ' draft'' class='draft-label'>Draft</span>
               </div>
-              <div class="page-actions">
-                <button @click="editPage(page)" class="btn-secondary sm">Edit</button>
-                <button @click="confirmDeletePage(page)" class="btn-danger sm">Delete</button>
+              <div class='page-actions'>
+                <button @click='editPage(page)' class='btn-secondary sm'>
+                  Edit
+                </button>
+                <button @click='confirmDeletePage(page)' class='btn-danger sm'>
+                  Delete
+                </button>
               </div>
             </div>
           </div>
@@ -51,51 +60,42 @@
     </div>
 
     <!-- Create/Edit Page Modal -->
-    <div v-if="showCreatePageModal || showEditPageModal" class="modal">
-      <div class="modal-content">
+    <div v-if='showCreatePageModal || showEditPageModal' class='modal'>
+      <div class='modal-content'>
         <h3>{{ isEditingPage ? 'Edit Page' : 'Create Page' }}</h3>
-        <form @submit.prevent="handlePageSubmit">
-          <div class="form-group">
-            <label for="title">Page Title</label>
-            <input
-              type="text"
-              id="title"
-              v-model="pageForm.title"
-              required
-              placeholder="Enter page title"
-            />
+        <form @submit.prevent='handlePageSubmit'>
+          <div class='form-group'>
+            <label for='title'>Page Title</label>
+            <input type='text' id='title' v-model='pageForm.title' required placeholder='Enter page title' />
           </div>
 
-          <div class="form-group">
-            <label for="meta_description">Meta Description</label>
-            <textarea
-              id="meta_description"
-              v-model="pageForm.meta_description"
-              placeholder="Enter meta description"
-            ></textarea>
+          <div class='form-group'>
+            <label for='meta_description'>Meta Description</label>
+            <textarea id='meta_description' v-model='pageForm.meta_description'
+              placeholder='Enter meta description'></textarea>
           </div>
 
-          <div class="form-group">
-            <label for="layout">Layout</label>
-            <select id="layout" v-model="pageForm.layout" required>
-              <option value="default">Default</option>
-              <option value="full-width">Full Width</option>
-              <option value="sidebar">Sidebar</option>
+          <div class='form-group'>
+            <label for='layout'>Layout</label>
+            <select id='layout' v-model='pageForm.layout' required>
+              <option value='default'>Default</option>
+              <option value='full-width'>Full Width</option>
+              <option value='sidebar'>Sidebar</option>
             </select>
           </div>
 
-          <div class="form-group">
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="pageForm.is_published" />
+          <div class='form-group'>
+            <label class='checkbox-label'>
+              <input type='checkbox' v-model='computedPublishedStatus' />
               <span>Published</span>
             </label>
           </div>
 
-          <div class="modal-actions">
-            <button type="button" @click="closePageModal" class="btn-secondary">
+          <div class='modal-actions'>
+            <button type='button' @click='closePageModal' class='btn-secondary'>
               Cancel
             </button>
-            <button type="submit" class="btn-primary" :disabled="submitting">
+            <button type='submit' class='btn-primary' :disabled='submitting'>
               {{ submitting ? 'Saving...' : 'Save' }}
             </button>
           </div>
@@ -104,19 +104,19 @@
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div v-if="showDeletePageModal" class="modal">
-      <div class="modal-content">
+    <div v-if='showDeletePageModal' class='modal'>
+      <div class='modal-content'>
         <h3>Delete Page</h3>
-        <p>Are you sure you want to delete "{{ selectedPage?.title }}" from "{{ getConferenceName(selectedPage?.conference_id) }}"?</p>
-        <div class="modal-actions">
-          <button @click="showDeletePageModal = false" class="btn-secondary">
+        <p>
+          Are you sure you want to delete '{{ selectedPage?.title }}' from '{{
+           getConferenceName(selectedPage?.conference_id)
+          }}'?
+        </p>
+        <div class='modal-actions'>
+          <button @click='showDeletePageModal = false' class='btn-secondary'>
             Cancel
           </button>
-          <button
-            @click="handleDeletePage"
-            class="btn-danger"
-            :disabled="submitting"
-          >
+          <button @click='handleDeletePage' class='btn-danger' :disabled='submitting'>
             {{ submitting ? 'Deleting...' : 'Delete' }}
           </button>
         </div>
@@ -158,7 +158,7 @@ const pageForm = reactive({
   title: '',
   meta_description: '',
   layout: 'default',
-  is_published: true
+  status: 'published',
 })
 
 // Helper functions
@@ -192,7 +192,7 @@ const resetPageForm = () => {
   pageForm.title = ''
   pageForm.meta_description = ''
   pageForm.layout = 'default'
-  pageForm.is_published = true
+  pageForm.status = 'published'
   selectedPage.value = null
   isEditingPage.value = false
 }
@@ -210,7 +210,7 @@ const editPage = (page) => {
   pageForm.title = page.title
   pageForm.meta_description = page.meta_description
   pageForm.layout = page.layout
-  pageForm.is_published = page.is_published
+  pageForm.status = page.status || 'draft'
   isEditingPage.value = true
   showEditPageModal.value = true
 }
@@ -301,34 +301,42 @@ const fetchPagesForConference = async (conferenceId) => {
 
 const handlePageSubmit = async () => {
   submitting.value = true
-  
+
   try {
     const conferenceId = selectedConference.value.id
-    
+
     if (isEditingPage.value) {
       // Update existing page
-      await axios.put(`/conferences/${conferenceId}/pages/${selectedPage.value.id}`, pageForm)
-      
+      await axios.put(
+        `/conferences/${conferenceId}/pages/${selectedPage.value.id}`,
+        pageForm
+      )
+
       // Update the page in our local array
-      const index = pages.value.findIndex(p => p.id === selectedPage.value.id)
+      const index = pages.value.findIndex(
+        (p) => p.id === selectedPage.value.id
+      )
       if (index !== -1) {
-        pages.value[index] = { 
-          ...pages.value[index], 
+        pages.value[index] = {
+          ...pages.value[index],
           ...pageForm,
-          conference_id: conferenceId
+          conference_id: conferenceId,
         }
       }
     } else {
       // Create new page
-      const response = await axios.post(`/conferences/${conferenceId}/pages`, pageForm)
-      
+      const response = await axios.post(
+        `/conferences/${conferenceId}/pages`,
+        pageForm
+      )
+
       // Add the new page to our local array
       pages.value.push({
         ...response.data.data,
-        conference_id: conferenceId
+        conference_id: conferenceId,
       })
     }
-    
+
     emit('refresh')
     closePageModal()
   } catch (err) {
@@ -341,16 +349,18 @@ const handlePageSubmit = async () => {
 
 const handleDeletePage = async () => {
   if (!selectedPage.value) return
-  
+
   submitting.value = true
-  
+
   try {
     const conferenceId = selectedPage.value.conference_id
-    await axios.delete(`/conferences/${conferenceId}/pages/${selectedPage.value.id}`)
-    
+    await axios.delete(
+      `/conferences/${conferenceId}/pages/${selectedPage.value.id}`
+    )
+
     // Remove the page from our local array
-    pages.value = pages.value.filter(p => p.id !== selectedPage.value.id)
-    
+    pages.value = pages.value.filter((p) => p.id !== selectedPage.value.id)
+
     emit('refresh')
     closePageModal()
   } catch (err) {
@@ -360,6 +370,14 @@ const handleDeletePage = async () => {
     submitting.value = false
   }
 }
+
+// The checkbox needs a computed property to work with status
+const computedPublishedStatus = computed({
+  get: () => pageForm.status === 'published',
+  set: (value) => {
+    pageForm.status = value ? 'published' : 'draft'
+  },
+})
 
 // Initialization
 onMounted(() => {
@@ -413,11 +431,11 @@ onMounted(() => {
         align-items: center;
         gap: 0.5rem;
         color: #6c757d;
-        
+
         .expand-icon {
           font-size: 0.8rem;
           transition: transform 0.3s;
-          
+
           &.expanded {
             transform: rotate(180deg);
           }
@@ -461,11 +479,11 @@ onMounted(() => {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        
+
         .draft {
           color: #6c757d;
         }
-        
+
         .draft-label {
           font-size: 0.7rem;
           background: #f8f9fa;
@@ -490,7 +508,9 @@ onMounted(() => {
   }
 }
 
-.loading, .error, .empty {
+.loading,
+.error,
+.empty {
   text-align: center;
   padding: 2rem;
   background: white;
@@ -544,7 +564,9 @@ onMounted(() => {
     color: #2c3e50;
   }
 
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     width: 100%;
     padding: 0.75rem;
     border: 1px solid #ddd;
@@ -561,13 +583,13 @@ onMounted(() => {
     min-height: 100px;
     resize: vertical;
   }
-  
+
   .checkbox-label {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
-    
+
     input[type="checkbox"] {
       width: auto;
     }
@@ -592,7 +614,7 @@ onMounted(() => {
     background: #95a5a6;
     cursor: not-allowed;
   }
-  
+
   &.sm {
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
@@ -612,7 +634,7 @@ onMounted(() => {
   &:hover {
     background: #7f8c8d;
   }
-  
+
   &.sm {
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
@@ -632,7 +654,7 @@ onMounted(() => {
   &:hover {
     background: #c0392b;
   }
-  
+
   &.sm {
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
