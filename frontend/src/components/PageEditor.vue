@@ -80,28 +80,6 @@
             />
           </div>
         </div>
-
-        <div class="form-row">
-          <div class="form-group visibility-toggle">
-            <label class="toggle-label">
-              <span class="status-text">Status:</span>
-              <button
-                type="button"
-                @click="toggleStatus"
-                class="btn-toggle"
-                :class="form.status === 'published' ? 'visible' : 'hidden'"
-              >
-                <i
-                  class="fas"
-                  :class="
-                    form.status === 'published' ? 'fa-eye' : 'fa-eye-slash'
-                  "
-                ></i>
-                {{ form.status === "published" ? "Published" : "Draft" }}
-              </button>
-            </label>
-          </div>
-        </div>
       </div>
 
       <!-- Content blocks section -->
@@ -123,10 +101,10 @@
                   @change="updateBlockType(index)"
                   class="form-control"
                 >
-                  <option value="text">Text Block</option>
-                  <option value="image">Image Block</option>
-                  <option value="video">Video Block</option>
-                  <option value="file">File Block</option>
+                  <option value="text">Text</option>
+                  <option value="image">Image</option>
+                  <option value="video">Video</option>
+                  <option value="file">File</option>
                 </select>
               </div>
 
@@ -441,17 +419,6 @@ watch(
   },
   { immediate: true }
 );
-
-const toggleStatus = () => {
-  form.status = form.status === "published" ? "draft" : "published";
-};
-
-// Initialize with at least one block if empty
-onMounted(() => {
-  if (form.blocks.length === 0) {
-    addBlock();
-  }
-});
 </script>
 
 <style lang="scss" scoped>

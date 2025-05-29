@@ -4,7 +4,7 @@
     <header class="header">
       <div class="header-content">
         <h1 class="logo">University CMS</h1>
-        <div 
+        <div
           class="connection-status"
           :class="{ 'status-error': backendStatus !== 'Connected' }"
         >
@@ -17,10 +17,15 @@
     <div class="hero-section">
       <div class="hero-content">
         <h2>Welcome to the University Consortium</h2>
-        <p>A comprehensive platform for managing academic conferences, papers, and events</p>
+        <p>
+          A comprehensive platform for managing academic conferences, papers,
+          and events
+        </p>
         <div class="auth-buttons">
           <router-link to="/login" class="btn btn-primary">Login</router-link>
-          <router-link to="/register" class="btn btn-secondary">Register</router-link>
+          <router-link to="/register" class="btn btn-secondary"
+            >Register</router-link
+          >
         </div>
       </div>
     </div>
@@ -43,27 +48,26 @@
 
       <!-- Conferences Grid -->
       <div v-else class="conferences-grid">
-        <div 
-          v-for="conference in conferences" 
-          :key="conference.id" 
+        <div
+          v-for="conference in conferences"
+          :key="conference.id"
           class="conference-card"
           @click="navigateToConference(conference.id)"
         >
           <h3>{{ conference.name }}</h3>
           <div class="conference-details">
-            <p class="conference-date">
-              <span class="label">Date:</span> 
-              {{ formatDate(conference.start_date) }} - {{ formatDate(conference.end_date) }}
-            </p>
             <p class="conference-location">
-              <span class="label">Location:</span> {{ conference.location }}
+              <i class="fas fa-map-marker-alt location-icon"></i>
+              {{ conference.location }}
+            </p>
+            <p class="conference-date">
+              <i class="fas fa-calendar-alt calendar-icon"></i>
+              {{ formatDate(conference.start_date) }} -
+              {{ formatDate(conference.end_date) }}
             </p>
             <p class="conference-description">
               {{ conference.description }}
             </p>
-          </div>
-          <div class="conference-status" :class="conference.status.toLowerCase()">
-            {{ conference.status }}
           </div>
         </div>
       </div>
@@ -72,73 +76,74 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
-import axios from 'axios'
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/authStore";
+import axios from "axios";
 
-const router = useRouter()
-const authStore = useAuthStore()
-const backendStatus = ref('Checking connection...')
-const conferences = ref([])
-const loading = ref(true)
-const error = ref(null)
+const router = useRouter();
+const authStore = useAuthStore();
+const backendStatus = ref("Checking connection...");
+const conferences = ref([]);
+const loading = ref(true);
+const error = ref(null);
 
 const navigateToConference = (conferenceId) => {
-  router.push(`/conferences/${conferenceId}`)
-}
+  router.push(`/conferences/${conferenceId}`);
+};
 
 const formatDate = (dateString) => {
-  if (!dateString) return 'Date not set'
-  
+  if (!dateString) return "Date not set";
+
   try {
-    const date = new Date(dateString)
+    const date = new Date(dateString);
     if (isNaN(date.getTime())) {
-      return 'Invalid date'
+      return "Invalid date";
     }
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   } catch (error) {
-    return 'Invalid date'
+    return "Invalid date";
   }
-}
+};
 
 const fetchConferences = async () => {
   try {
-    const response = await axios.get('/conferences')
-    conferences.value = response.data
-    loading.value = false
+    const response = await axios.get("/conferences");
+    // Filter conferences to only show those with status="published"
+    conferences.value = response.data.filter(conference => conference.status === "published");
+    loading.value = false;
   } catch (err) {
-    error.value = 'Failed to load conferences'
-    loading.value = false
-    console.error('Error fetching conferences:', err)
+    error.value = "Failed to load conferences";
+    loading.value = false;
+    console.error("Error fetching conferences:", err);
   }
-}
+};
 
 onMounted(async () => {
   try {
-    await axios.get('/health')
-    backendStatus.value = 'Connected'
+    await axios.get("/health");
+    backendStatus.value = "Connected";
   } catch (error) {
-    backendStatus.value = 'Connection issue'
-    console.error('Backend connection issue:', error)
+    backendStatus.value = "Connection issue";
+    console.error("Backend connection issue:", error);
   }
-  
-  await fetchConferences()
-  
+
+  await fetchConferences();
+
   if (authStore.isAuthenticated) {
     if (authStore.isAdmin) {
-      router.push('/admin/dashboard')
+      router.push("/admin/dashboard");
     } else if (authStore.isEditor) {
-      router.push('/editor/dashboard')
+      router.push("/editor/dashboard");
     } else {
-      router.push('/home')
+      router.push("/home");
     }
   }
-})
+});
 </script>
 
 <style scoped>
@@ -271,8 +276,12 @@ onMounted(async () => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-state {
@@ -329,11 +338,29 @@ onMounted(async () => {
   font-size: 0.875rem;
   color: #666;
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.location-icon {
+  color: #e74c3c;
+  margin-right: 0.5rem;
+  font-size: 1rem;
+  display: none;
+}
+
+.calendar-icon {
+  color: #3498db;
+  margin-right: 0.5rem;
+  font-size: 1rem;
+  display: none;
 }
 
 .label {
   font-weight: 500;
   color: #333;
+  margin-right: 0.25rem;
+  display: none;
 }
 
 .conference-description {
@@ -347,37 +374,18 @@ onMounted(async () => {
 }
 
 .conference-status {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.conference-status.active {
-  background-color: #e6f4ea;
-  color: #1e7e34;
-}
-
-.conference-status.upcoming {
-  background-color: #fff3cd;
-  color: #856404;
-}
-
-.conference-status.completed {
-  background-color: #e2e3e5;
-  color: #383d41;
+  display: none;
 }
 
 @media (max-width: 768px) {
   .conferences-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .auth-buttons {
     flex-direction: column;
   }
-  
+
   .btn {
     width: 100%;
     text-align: center;

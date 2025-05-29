@@ -45,7 +45,6 @@
                   :title="`/${page.slug}`"
                 >
                   {{ page.title }}
-                  <i class="fas fa-eye hover-icon"></i>
                 </h3>
 
                 <div class="page-dates">
@@ -592,18 +591,8 @@ onMounted(() => {
           align-items: center;
           gap: 0.5rem;
 
-          .hover-icon {
-            font-size: 0.8em;
-            opacity: 0;
-            transition: opacity 0.3s;
-          }
-
           &:hover {
             color: #3498db;
-
-            .hover-icon {
-              opacity: 1;
-            }
 
             &::after {
               content: attr(title);

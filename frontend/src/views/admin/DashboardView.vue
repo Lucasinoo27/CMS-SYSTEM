@@ -32,16 +32,14 @@
           <p>Upload files for certain event</p>
         </div>
       </div>
-
     </div>
   </div>
 </template>
 
 <script>
-import { computed, ref, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
-import api from '@/services/api';
 
 export default {
   name: 'AdminDashboardView',
@@ -52,7 +50,7 @@ export default {
     const router = useRouter();
     
     const user = computed(() => authStore.user);
-    
+
     const logout = async () => {
       try {
         await authStore.logout();
@@ -62,42 +60,13 @@ export default {
       }
     };
 
-    const stats = ref({
-      conferences: 0,
-      pages: 0,
-      users: 0,
-      files: 0
-    });
-
-    const fetchStats = async () => {
-      try {
-        const response = await api.get('/admin/stats');
-        stats.value = response.data;
-      } catch (error) {
-        console.error('Error fetching admin stats:', error);
-        // Set default values if stats fail to load
-        stats.value = {
-          conferences: 0,
-          pages: 0,
-          users: 0,
-          files: 0
-        };
-      }
-    };
-
     const navigateTo = (path) => {
       router.push(path);
     };
 
-    onMounted(() => {
-      fetchStats();
-    });
-
     return {
       user,
       logout,
-      stats,
-      fetchStats,
       navigateTo
     };
   }

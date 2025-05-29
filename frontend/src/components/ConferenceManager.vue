@@ -105,7 +105,7 @@
           <div class="form-row">
             <div class="form-group full-width">
               <label for="location">Location</label>
-              <input type="text" id="location" v-model="form.location" placeholder="Enter conference location"
+              <input type="text" id="location" v-model="form.location" required placeholder="Enter conference location"
                 class="form-control" />
             </div>
           </div>
@@ -326,7 +326,7 @@ const editConference = (conference) => {
   }
 
   form.location = conference.location || ''
-  form.status = conference.status || 'published'
+  form.status = conference.status || 'draft'
   isEditing.value = true
   showEditModal.value = true
   showCreateModal.value = false
@@ -338,7 +338,7 @@ const confirmDelete = (conference) => {
 }
 
 const handleSubmit = async () => {
-  if (!form.name || !form.start_date || !form.end_date) {
+  if (!form.name || !form.description || !form.location || !form.start_date || !form.end_date) {
     showErrorNotification('Please fill in all required fields')
     return
   }
@@ -358,8 +358,16 @@ const handleSubmit = async () => {
     emit("refresh")
     closeModal()
   } catch (err) {
-    showErrorNotification('Failed to save conference. Please try again.')
-    console.error("Error saving conference:", err);
+    // Show more specific error message if available
+    if (err.response && err.response.data && err.response.data.errors) {
+      const errorMessages = Object.values(err.response.data.errors)
+        .flat()
+        .join(', ')
+      showErrorNotification(`Validation error: ${errorMessages}`)
+    } else {
+      showErrorNotification('Failed to save conference. Please try again.')
+    }
+    console.error('Error saving conference:', err)
   } finally {
     submitting.value = false;
   }

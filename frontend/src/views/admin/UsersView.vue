@@ -1,33 +1,24 @@
 <template>
-  <div class="users-view">
-    <div class="page-header">
+  <div class='users-view'>
+    <div class='page-header'>
       <h1>User Management</h1>
-      <button class="btn-primary" @click="showCreateModal = true">
-        <i class="fas fa-plus"></i> Add New User
-      </button>
     </div>
 
-    <div v-if="success" class="success-message">
-      {{ success }}
-    </div>
+    <p class='page-subtitle'>Manage users and their permissions</p>
 
-    <div v-if="error" class="error-message">
-      {{ error }}
-    </div>
-
-    <div class="users-grid">
-      <div v-if="loading" class="loading">Loading users...</div>
-      <div v-else-if="error" class="error">{{ error }}</div>
-      <div v-else-if="users.length === 0" class="empty">
+    <div class='users-grid'>
+      <div v-if='loading' class='loading'>Loading users...</div>
+      <div v-else-if='error' class='error'>{{ error }}</div>
+      <div v-else-if='users.length === 0' class='empty'>
         No users found. Add your first user to get started.
       </div>
-      <div v-else class="user-cards">
-        <div v-for="user in users" :key="user.id" class="user-card">
-          <div class="user-info">
-            <div class="user-avatar">
-              <i class="fas fa-user"></i>
+      <div v-else class='user-cards'>
+        <div v-for='user in users' :key='user.id' class='user-card'>
+          <div class='user-info'>
+            <div class='user-avatar'>
+              <i class='fas fa-user'></i>
             </div>
-            <div class="user-details">
+            <div class='user-details'>
               <h3>{{ user.name }}</h3>
               <p class="user-email">{{ user.email }}</p>
               <span :class="['user-role', user.role]">{{ user.role }}</span>
@@ -42,127 +33,101 @@
               </div>
             </div>
           </div>
-          <div class="user-actions">
-            <button
-              class="btn-icon"
-              @click="editUser(user)"
-              title="Edit User"
-            >
-              <i class="fas fa-edit"></i>
+          <div class='user-actions'>
+            <button class='btn-icon' @click='editUser(user)' title='Edit User'>
+              <i class='fas fa-edit'></i>
             </button>
-            <button
-              class="btn-icon delete"
-              @click="confirmDelete(user)"
-              title="Delete User"
-            >
-              <i class="fas fa-trash-alt"></i>
+            <button class='btn-icon delete' @click='confirmDelete(user)' title='Delete User'>
+              <i class='fas fa-trash-alt'></i>
             </button>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Create/Edit Modal -->
-    <div v-if="showCreateModal || showEditModal" class="modal">
-      <div class="modal-content">
-        <h3>{{ isEditing ? 'Edit User' : 'Create User' }}</h3>
-        <form @submit.prevent="handleSubmit">
-          <div class="form-group">
-            <label for="name">Name</label>
-            <input
-              type="text"
-              id="name"
-              v-model="form.name"
-              required
-              placeholder="Enter user name"
-            />
-          </div>
+        <!-- Inline Edit Form (appears below the user when editing) -->
+        <div v-if='showEditModal && selectedUser' class='edit-form-container'>
+          <div class='edit-form'>
+            <h3>{{ selectedUser.name }}</h3>
+            <form @submit.prevent='handleSubmit'>
+              <div class='form-group'>
+                <label for='name'>Name</label>
+                <input type='text' id='name' v-model='form.name' required placeholder='Enter user name' />
+              </div>
 
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              v-model="form.email"
-              required
-              placeholder="Enter user email"
-            />
-          </div>
+              <div class='form-group'>
+                <label for='email'>Email</label>
+                <input type='email' id='email' v-model='form.email' required placeholder='Enter user email' />
+              </div>
 
-          <div class="form-group">
-            <label for="role">Role</label>
-            <select id="role" v-model="form.role" required>
-              <option value="admin">Admin</option>
-              <option value="editor">Editor</option>
-            </select>
-          </div>
+              <div class='form-group'>
+                <label for='role'>Role</label>
+                <select id='role' v-model='form.role' required>
+                  <option value='admin'>Admin</option>
+                  <option value='editor'>Editor</option>
+                </select>
+              </div>
 
-          <div class="form-group" v-if="form.role === 'editor'">
-            <label>Assigned Conferences</label>
-            <div class="conference-list">
-              <div v-if="loadingConferences" class="loading">Loading conferences...</div>
-              <div v-else-if="conferences.length === 0" class="empty">No conferences available</div>
-              <div v-else class="conference-grid">
-                <div v-for="conference in conferences" :key="conference.id" class="conference-item">
-                  <label class="conference-checkbox">
-                    <input
-                      type="checkbox"
-                      :value="Number(conference.id)"
-                      :checked="form.conference_ids.includes(Number(conference.id))"
-                      @change="(e) => handleConferenceSelection(conference.id, e.target.checked)"
-                    />
-                    <span>{{ conference.name }}</span>
-                  </label>
+              <div class='form-group' v-if="form.role === 'editor'">
+                <label>Assigned Conferences</label>
+                <div v-if='loadingConferences' class='loading'>
+                  Loading conferences...
+                </div>
+                <div v-else-if='conferences.length === 0' class='empty'>
+                  No conferences available
+                </div>
+                <div v-else class='conference-list'>
+                  <div
+                    v-for="conference in conferences"
+                    :key="conference.id"
+                    class="conference-item"
+                  >
+                    <label class="conference-checkbox">
+                      <span>{{ conference.name }}</span>
+                      <input
+                        type="checkbox"
+                        :value="Number(conference.id)"
+                        :checked="form.conference_ids.includes(Number(conference.id))"
+                        @change="(e) => handleConferenceSelection(conference.id, e.target.checked)"
+                      />
+                    </label>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div class="form-group" v-if="!isEditing">
-            <label for="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              v-model="form.password"
-              required
-              placeholder="Enter password"
-            />
+              <div class='form-actions'>
+                <button type='button' @click='closeModal' class='btn-secondary'>
+                  Cancel
+                </button>
+                <button type='submit' class='btn-primary' :disabled='submitting'>
+                  {{ submitting ? 'Saving...' : 'Save' }}
+                </button>
+              </div>
+            </form>
           </div>
-
-          <div class="modal-actions">
-            <button type="button" @click="closeModal" class="btn-secondary">
-              Cancel
-            </button>
-            <button type="submit" class="btn-primary" :disabled="submitting">
-              {{ submitting ? 'Saving...' : 'Save' }}
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div v-if="showDeleteModal" class="modal">
-      <div class="modal-content">
+    <div v-if='showDeleteModal' class='modal'>
+      <div class='modal-content'>
         <h3>Delete User</h3>
-        <p>Are you sure you want to delete "{{ selectedUser?.name }}"?</p>
-        <p class="warning">This action cannot be undone.</p>
-        <div class="modal-actions">
-          <button
-            class="btn-secondary"
-            @click="showDeleteModal = false"
-          >
+        <p>Are you sure you want to delete '{{ selectedUser?.name }}'?</p>
+        <p class='warning'>This action cannot be undone.</p>
+        <div class='modal-actions'>
+          <button class='btn-secondary' @click='showDeleteModal = false'>
             Cancel
           </button>
-          <button
-            class="btn-danger"
-            @click="deleteUser"
-            :disabled="deleting"
-          >
+          <button class='btn-danger' @click='deleteUser' :disabled='deleting'>
             {{ deleting ? 'Deleting...' : 'Delete' }}
           </button>
         </div>
       </div>
+    </div>
+
+    <!-- Notification -->
+    <div v-if='showNotification' class='notification' :class='notificationType'>
+      {{ notificationMessage }}
+      <button class='close-btn' @click='closeNotification'>×</button>
     </div>
   </div>
 </template>
@@ -179,7 +144,6 @@ const authStore = useAuthStore()
 const users = ref([])
 const loading = ref(false)
 const error = ref('')
-const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const showDeleteModal = ref(false)
 const selectedUser = ref(null)
@@ -188,18 +152,19 @@ const deleting = ref(false)
 const isEditing = ref(false)
 const conferences = ref([])
 const loadingConferences = ref(false)
-const success = ref('')
+
+// Notification system
+const showNotification = ref(false)
+const notificationMessage = ref('')
+const notificationType = ref('success')
+const hideNotificationTimer = ref(null)
 
 const form = reactive({
   name: '',
   email: '',
   role: 'editor',
-  password: '',
-  conference_ids: []
+  conference_ids: [],
 })
-
-// Initialize selectedConferences as a reactive ref with a Set
-const selectedConferences = ref(new Set())
 
 // Add a method to handle conference selection
 const handleConferenceSelection = (conferenceId, isChecked) => {
@@ -221,19 +186,44 @@ const resetForm = () => {
   form.name = ''
   form.email = ''
   form.role = 'editor'
-  form.password = ''
   form.conference_ids = []
   selectedUser.value = null
   isEditing.value = false
 }
 
 const closeModal = () => {
-  showCreateModal.value = false
   showEditModal.value = false
   showDeleteModal.value = false
   resetForm()
-  error.value = ''
-  success.value = ''
+}
+
+// Notification methods
+const closeNotification = () => {
+  showNotification.value = false
+}
+
+// Auto-hide notifications after 5 seconds
+watch(showNotification, (newValue) => {
+  if (newValue && hideNotificationTimer.value) {
+    clearTimeout(hideNotificationTimer.value)
+  }
+  if (newValue) {
+    hideNotificationTimer.value = setTimeout(() => {
+      showNotification.value = false
+    }, 5000)
+  }
+})
+
+const showSuccessNotification = (message) => {
+  notificationMessage.value = message
+  notificationType.value = 'success'
+  showNotification.value = true
+}
+
+const showErrorNotification = (message) => {
+  notificationMessage.value = message
+  notificationType.value = 'error'
+  showNotification.value = true
 }
 
 const fetchUsers = async () => {
@@ -245,7 +235,7 @@ const fetchUsers = async () => {
 
   loading.value = true
   error.value = ''
-  
+
   try {
     const response = await userApi.getAll()
     // Fetch conferences for each editor
@@ -253,12 +243,22 @@ const fetchUsers = async () => {
       response.data.map(async (user) => {
         if (user.role === 'editor') {
           try {
-            const confResponse = await axios.get(`/users/${user.id}/conferences`)
+            const confResponse = await axios.get(
+              `/users/${user.id}/conferences`
+            )
             // Ensure we're setting the conferences array properly
-            user.conferences = Array.isArray(confResponse.data) ? confResponse.data : []
-            console.log(`Fetched conferences for user ${user.id}:`, user.conferences)
+            user.conferences = Array.isArray(confResponse.data)
+              ? confResponse.data
+              : []
+            console.log(
+              `Fetched conferences for user ${user.id}:`,
+              user.conferences
+            )
           } catch (err) {
-            console.error(`Error fetching conferences for user ${user.id}:`, err)
+            console.error(
+              `Error fetching conferences for user ${user.id}:`,
+              err
+            )
             user.conferences = []
           }
         } else {
@@ -276,7 +276,7 @@ const fetchUsers = async () => {
       router.push('/login')
       return
     }
-    error.value = 'Failed to load users. Please try again.'
+    showErrorNotification('Failed to load users. Please try again.')
     users.value = []
   } finally {
     loading.value = false
@@ -290,6 +290,7 @@ const fetchConferences = async () => {
     conferences.value = response.data
   } catch (err) {
     console.error('Error fetching conferences:', err)
+    showErrorNotification('Failed to load conferences')
   } finally {
     loadingConferences.value = false
   }
@@ -299,7 +300,7 @@ const fetchUserConferences = async (userId) => {
   try {
     const response = await axios.get(`/users/${userId}/conferences`)
     // Ensure we're setting an array of numbers
-    form.conference_ids = response.data.map(c => Number(c.id))
+    form.conference_ids = response.data.map((c) => Number(c.id))
     console.log('Loaded conference IDs:', form.conference_ids)
   } catch (err) {
     console.error('Error fetching user conferences:', err)
@@ -314,14 +315,14 @@ const editUser = async (user) => {
   form.role = user.role
   isEditing.value = true
   showEditModal.value = true
-  
+
   // Reset conference IDs first
   form.conference_ids = []
-  
+
   if (user.role === 'editor') {
     // If we already have the conferences data from the user card, use it
     if (user.conferences && user.conferences.length > 0) {
-      form.conference_ids = user.conferences.map(c => Number(c.id))
+      form.conference_ids = user.conferences.map((c) => Number(c.id))
     } else {
       // Otherwise fetch them
       await fetchUserConferences(user.id)
@@ -336,145 +337,125 @@ const confirmDelete = (user) => {
 
 const handleSubmit = async () => {
   submitting.value = true
-  error.value = ''
-  success.value = ''
-  
+
   try {
-    if (isEditing.value) {
-      // Update user data
-      await userApi.update(selectedUser.value.id, {
-        name: form.name,
-        email: form.email,
-        role: form.role
-      })
-      
-      // Update conference assignments if user is an editor
-      if (form.role === 'editor') {
-        try {
-          // Ensure we have the latest conference IDs
-          const conferenceIds = [...form.conference_ids]
-          
-          console.log('Sending conference assignment request:', {
-            userId: selectedUser.value.id,
-            conferenceIds: conferenceIds
-          })
-          
-          const response = await axios.post(`/users/${selectedUser.value.id}/conferences`, {
-            conference_ids: conferenceIds
-          })
-          
-          console.log('Conference assignment response:', response.data)
-          
-          if (response.data.message === 'Conferences assigned successfully') {
-            // Update the user's conferences in the local state
-            const userIndex = users.value.findIndex(u => u.id === selectedUser.value.id)
-            if (userIndex !== -1) {
-              users.value[userIndex].conferences = response.data.conferences
-            }
-            
-            success.value = 'User and conference assignments updated successfully'
-            await fetchUsers() // Refresh the entire user list
-            closeModal()
-          } else {
-            throw new Error(response.data.message || 'Unexpected response from server')
+    // Update user data
+    await userApi.update(selectedUser.value.id, {
+      name: form.name,
+      email: form.email,
+      role: form.role,
+    })
+
+    // Update conference assignments if user is an editor
+    if (form.role === 'editor') {
+      try {
+        // Ensure we have the latest conference IDs
+        const conferenceIds = [...form.conference_ids]
+
+        console.log('Sending conference assignment request:', {
+          userId: selectedUser.value.id,
+          conferenceIds: conferenceIds,
+        })
+
+        const response = await axios.post(
+          `/users/${selectedUser.value.id}/conferences`,
+          {
+            conference_ids: conferenceIds,
           }
-        } catch (confError) {
-          console.error('Error assigning conferences:', {
-            error: confError,
-            response: confError.response?.data,
-            status: confError.response?.status,
-            message: confError.message,
-            stack: confError.stack
-          })
-          
-          // Handle specific error cases
-          if (confError.response?.status === 403) {
-            error.value = 'Only editors can be assigned to conferences'
-          } else if (confError.response?.status === 404) {
-            error.value = 'User not found'
-          } else if (confError.response?.status === 422) {
-            error.value = 'Invalid conference data: ' + JSON.stringify(confError.response.data.errors)
-          } else if (confError.response?.data?.message) {
-            error.value = confError.response.data.message
-          } else {
-            error.value = 'Failed to assign conferences. Please try again.'
+        )
+
+        console.log('Conference assignment response:', response.data)
+
+        if (response.data.message === 'Conferences assigned successfully') {
+          // Update the user's conferences in the local state
+          const userIndex = users.value.findIndex(
+            (u) => u.id === selectedUser.value.id
+          )
+          if (userIndex !== -1) {
+            users.value[userIndex].conferences = response.data.conferences
           }
-          
-          // Don't return here, let the user update complete
-          success.value = 'User updated successfully'
-          await fetchUsers()
+
+          showSuccessNotification(
+            'User and conference assignments updated successfully'
+          )
+          await fetchUsers() // Refresh the entire user list
           closeModal()
+        } else {
+          throw new Error(
+            response.data.message || 'Unexpected response from server'
+          )
         }
-      } else {
-        success.value = 'User updated successfully'
+      } catch (confError) {
+        console.error('Error assigning conferences:', {
+          error: confError,
+          response: confError.response?.data,
+          status: confError.response?.status,
+          message: confError.message,
+          stack: confError.stack,
+        })
+
+        // Handle specific error cases
+        if (confError.response?.status === 403) {
+          showErrorNotification('Only editors can be assigned to conferences')
+        } else if (confError.response?.status === 404) {
+          showErrorNotification('User not found')
+        } else if (confError.response?.status === 422) {
+          showErrorNotification(
+            'Invalid conference data: ' +
+            JSON.stringify(confError.response.data.errors)
+          )
+        } else if (confError.response?.data?.message) {
+          showErrorNotification(confError.response.data.message)
+        } else {
+          showErrorNotification(
+            'Failed to assign conferences. Please try again.'
+          )
+        }
+
+        // Don't return here, let the user update complete
+        showSuccessNotification('User updated successfully')
         await fetchUsers()
         closeModal()
       }
     } else {
-      // Create new user
-      const response = await userApi.create(form)
-      
-      // Assign conferences if user is an editor
-      if (form.role === 'editor' && form.conference_ids.length > 0) {
-        try {
-          const conferenceIds = [...form.conference_ids]
-          
-          const confResponse = await axios.post(`/users/${response.data.user.id}/conferences`, {
-            conference_ids: conferenceIds
-          })
-          
-          if (confResponse.data.message === 'Conferences assigned successfully') {
-            success.value = 'User created and conferences assigned successfully'
-            await fetchUsers()
-            closeModal()
-          } else {
-            throw new Error('Unexpected response from server')
-          }
-        } catch (confError) {
-          console.error('Error assigning conferences:', confError.response?.data || confError)
-          error.value = confError.response?.data?.message || 'User created but failed to assign conferences. Please try assigning conferences again.'
-          return
-        }
-      } else {
-        success.value = 'User created successfully'
-        await fetchUsers()
-        closeModal()
-      }
+      showSuccessNotification('User updated successfully')
+      await fetchUsers()
+      closeModal()
     }
   } catch (err) {
     console.error('Error saving user:', err.response?.data || err)
-    error.value = err.response?.data?.message || 'Failed to save user. Please try again.'
+    showErrorNotification(
+      err.response?.data?.message || 'Failed to save user. Please try again.'
+    )
   } finally {
     submitting.value = false
   }
 }
 
 // Watch for role changes to reset conference assignments
-watch(() => form.role, (newRole) => {
-  if (newRole !== 'editor') {
-    form.conference_ids = []
+watch(
+  () => form.role,
+  (newRole) => {
+    if (newRole !== 'editor') {
+      form.conference_ids = []
+    }
   }
-})
-
-const toggleUserStatus = async (user) => {
-  try {
-    await userApi.update(user.id, { active: !user.active })
-    await fetchUsers()
-  } catch (error) {
-    console.error('Error updating user status:', error)
-  }
-}
+)
 
 const deleteUser = async () => {
   if (!selectedUser.value) return
-  
+
   deleting.value = true
   try {
     await userApi.delete(selectedUser.value.id)
+    showSuccessNotification(
+      `User '${selectedUser.value.name}' has been deleted`
+    )
     await fetchUsers()
     showDeleteModal.value = false
   } catch (error) {
     console.error('Error deleting user:', error)
+    showErrorNotification('Failed to delete user')
   } finally {
     deleting.value = false
   }
@@ -488,22 +469,34 @@ onMounted(() => {
 // Cleanup on component unmount
 onBeforeUnmount(() => {
   users.value = []
-  error.value = ''
+  if (hideNotificationTimer.value) {
+    clearTimeout(hideNotificationTimer.value)
+  }
 })
 </script>
 
 <style lang="scss" scoped>
 .users-view {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+
   .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
 
     h1 {
       margin: 0;
       color: #2c3e50;
     }
+  }
+
+  .page-subtitle {
+    color: #666;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
   }
 
   .users-grid {
@@ -579,6 +572,44 @@ onBeforeUnmount(() => {
         gap: 0.5rem;
       }
     }
+
+    .edit-form-container {
+      grid-column: 1 / -1;
+      margin-top: -0.75rem;
+      margin-bottom: 1.5rem;
+
+      .edit-form {
+        background: #f8f9fa;
+        border-radius: 0 0 8px 8px;
+        padding: 1.5rem;
+        border: 1px solid #e9ecef;
+
+        h3 {
+          margin-top: 0;
+          margin-bottom: 1.5rem;
+          color: #2c3e50;
+          padding-bottom: 0.75rem;
+          border-bottom: 1px solid #e9ecef;
+        }
+
+        .conference-list {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 0.5rem;
+          padding: 1rem;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          max-height: none;
+        }
+
+        .form-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 1rem;
+          margin-top: 1.5rem;
+        }
+      }
+    }
   }
 
   .loading {
@@ -644,7 +675,8 @@ onBeforeUnmount(() => {
       color: #2c3e50;
     }
 
-    input, select {
+    input,
+    select {
       width: 100%;
       padding: 0.75rem;
       border: 1px solid #ddd;
@@ -755,6 +787,19 @@ onBeforeUnmount(() => {
   .conference-list {
     margin-top: 0.5rem;
     
+    
+    .conference-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.5rem;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+
     .conference-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -768,36 +813,22 @@ onBeforeUnmount(() => {
     
     .conference-item {
       .conference-checkbox {
-        display: flex;
+        flex-direction: row;
         align-items: center;
         gap: 0.5rem;
         cursor: pointer;
-        
+        display: flex;
+        justify-content: space-between;
+
         input[type="checkbox"] {
           margin: 0;
         }
-        
+
         span {
           font-size: 0.9rem;
         }
       }
     }
-  }
-
-  .success-message {
-    background-color: #d4edda;
-    color: #155724;
-    padding: 1rem;
-    border-radius: 4px;
-    margin-bottom: 1rem;
-  }
-
-  .error-message {
-    background-color: #f8d7da;
-    color: #721c24;
-    padding: 1rem;
-    border-radius: 4px;
-    margin-bottom: 1rem;
   }
 
   .user-conferences {
@@ -827,6 +858,56 @@ onBeforeUnmount(() => {
       color: #999;
       font-style: italic;
     }
+  }
+
+  .notification {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 1rem 2rem;
+    border-radius: 4px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16);
+
+    &.success {
+      background: #2ecc71;
+    }
+
+    &.error {
+      background: #e74c3c;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      margin-left: 1rem;
+      opacity: 0.8;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
   }
 }
 </style>
