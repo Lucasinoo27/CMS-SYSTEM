@@ -1,11 +1,6 @@
 <template>
   <div class="wysiwyg-editor">
-    <Editor
-      v-model="editorContent"
-      :init="editorConfig"
-      :disabled="disabled"
-      @onInit="handleEditorInit"
-    />
+    <Editor v-model="editorContent" :init="editorConfig" :disabled="disabled" @onInit="handleEditorInit" />
     <div v-if="error" class="error-message">{{ error }}</div>
   </div>
 </template>
@@ -40,62 +35,70 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'editor-ready', 'image-upload']);
 
 const editorContent = ref(props.modelValue);
-const error = ref('');
-const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const error = ref("");
 
 // Determine the upload endpoint based on authentication status
 const uploadEndpoint = computed(() => {
   if (props.publicMode || !authStore.isAuthenticated) {
-    return `${apiUrl}/api/uploads/public`;
+    return `/uploads/public`;
   }
-  return `${apiUrl}/api/uploads`;
+  return `/uploads`;
 });
 
 // Watch for changes in the model value
-watch(() => props.modelValue, (newValue) => {
-  if (newValue !== editorContent.value) {
-    editorContent.value = newValue;
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    if (newValue !== editorContent.value) {
+      editorContent.value = newValue;
+    }
   }
-});
+);
 
 // Watch for changes in the editor content
-watch(() => editorContent.value, (newValue) => {
-  emit('update:modelValue', newValue);
-});
+watch(
+  () => editorContent.value,
+  (newValue) => {
+    emit("update:modelValue", newValue);
+  }
+);
 
 const handleEditorInit = (editor) => {
-  emit('editor-ready', editor);
+  emit("editor-ready", editor);
 };
 
 // Handle image uploads
 const handleImageUpload = (blobInfo, progress) => {
   return new Promise((resolve, reject) => {
     const formData = new FormData();
-    formData.append('file', blobInfo.blob(), blobInfo.filename());
-    
+    formData.append("file", blobInfo.blob(), blobInfo.filename());
+
     const headers = {};
     // Add authorization header if authenticated
     if (authStore.isAuthenticated && !props.publicMode) {
-      headers['Authorization'] = `Bearer ${authStore.token}`;
+      headers["Authorization"] = `Bearer ${authStore.token}`;
     }
-    
+
     axios.post(uploadEndpoint.value, formData, {
-      headers: { 
-        'Content-Type': 'multipart/form-data',
-        ...headers
+      baseURL: import.meta.env.VITE_API_URL || "/api",
+      headers: {
+        "Content-Type": "multipart/form-data",
+        ...headers,
       },
       onUploadProgress: (e) => {
-        progress(e.loaded / e.total * 100);
-      }
+        progress((e.loaded / e.total) * 100);
+      },
     })
-    .then(response => {
-      resolve(response.data.url);
-      emit('image-upload', response.data);
-    })
-    .catch(err => {
-      error.value = 'Failed to upload image. Please try again.';
-      reject({ message: 'Image upload failed', remove: true });
-    });
+      .then((response) => {
+        console.log("Upload response:", response.data);
+        resolve(response.data.url);
+        emit("image-upload", response.data);
+      })
+      .catch((err) => {
+        console.error("Image upload error:", err);
+        error.value = "Failed to upload image. Please try again.";
+        reject({ message: "Image upload failed", remove: true });
+      });
   });
 };
 
@@ -150,4 +153,4 @@ const editorConfig = {
 :deep(.tox-statusbar) {
   border-top: 1px solid #ddd;
 }
-</style> 
+</style>

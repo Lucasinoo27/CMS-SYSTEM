@@ -56,33 +56,36 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label for="layout">Layout Template</label>
-            <select
-              id="layout"
-              v-model="form.layout"
-              required
+            <label for="meta-description">Meta Description</label>
+            <textarea
+              id="meta-description"
+              v-model="form.meta_description"
+              placeholder="Enter meta description for SEO"
               class="form-control"
-            >
+              rows="3"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="layout">Page Layout</label>
+            <select id="layout" v-model="form.layout" class="form-control">
               <option value="default">Default Layout</option>
               <option value="full-width">Full Width</option>
               <option value="sidebar">With Sidebar</option>
             </select>
           </div>
-
-          <div class="form-group">
-            <label for="meta_description">Meta Description</label>
-            <input
-              type="text"
-              id="meta_description"
-              v-model="form.meta_description"
-              placeholder="Brief description for search engines"
-              class="form-control"
-            />
-          </div>
         </div>
       </div>
 
-      <!-- Content blocks section -->
+      <!-- Page Files Section -->
+      <div v-if="pageId && conferenceId" class="editor-section">
+        <h3 class="section-title">
+          <i class="fas fa-file-alt"></i> Page Files
+        </h3>
+
+        <PageFileManager :conferenceId="conferenceId" :pageId="pageId" />
+      </div>
+
       <div class="editor-section">
         <h3 class="section-title">
           <i class="fas fa-paragraph"></i> Page Content
@@ -95,17 +98,8 @@
             class="content-block"
           >
             <div class="block-header">
-              <div class="block-type">
-                <select
-                  v-model="block.type"
-                  @change="updateBlockType(index)"
-                  class="form-control"
-                >
-                  <option value="text">Text</option>
-                  <option value="image">Image</option>
-                  <option value="video">Video</option>
-                  <option value="file">File</option>
-                </select>
+              <div class="block-title">
+                <span>Content Block</span>
               </div>
 
               <div class="block-actions">
@@ -140,74 +134,12 @@
 
             <div class="block-content">
               <!-- Text Block with WYSIWYG Editor -->
-              <div v-if="block.type === 'text'" class="text-editor">
+              <div class="text-editor">
                 <WysiwygEditor
                   v-model="block.content"
                   @image-upload="handleWysiwygImageUpload"
                   :publicMode="false"
                 />
-              </div>
-
-              <!-- Image Block -->
-              <div v-else-if="block.type === 'image'" class="media-block">
-                <div v-if="block.content" class="preview">
-                  <img :src="block.content" :alt="block.alt || ''" />
-                  <input
-                    type="text"
-                    v-model="block.alt"
-                    placeholder="Image alt text"
-                    class="media-caption form-control"
-                  />
-                </div>
-                <div v-else class="upload-prompt">
-                  <FileUploader
-                    acceptedTypes="image/*"
-                    :maxFileSize="2 * 1024 * 1024"
-                    @upload-complete="
-                      (files) => handleMediaUpload(files, index)
-                    "
-                    @upload-error="handleError"
-                  />
-                </div>
-              </div>
-
-              <!-- Video Block -->
-              <div v-else-if="block.type === 'video'" class="media-block">
-                <input
-                  type="text"
-                  v-model="block.content"
-                  placeholder="Enter video URL (YouTube, Vimeo)"
-                  @input="updateVideoEmbed(index)"
-                  class="form-control"
-                />
-                <div
-                  v-if="block.embed"
-                  class="video-preview"
-                  v-html="block.embed"
-                ></div>
-              </div>
-
-              <!-- File Block -->
-              <div v-else-if="block.type === 'file'" class="media-block">
-                <div v-if="block.content" class="file-preview">
-                  <i class="fas fa-file"></i>
-                  <span>{{ block.fileName }}</span>
-                  <button
-                    type="button"
-                    class="btn-link"
-                    @click="removeFile(index)"
-                  >
-                    Remove
-                  </button>
-                </div>
-                <div v-else class="upload-prompt">
-                  <FileUploader
-                    acceptedTypes=".pdf,.doc,.docx,.xls,.xlsx"
-                    :maxFileSize="5 * 1024 * 1024"
-                    @upload-complete="(files) => handleFileUpload(files, index)"
-                    @upload-error="handleError"
-                  />
-                </div>
               </div>
             </div>
           </div>
@@ -227,8 +159,8 @@
 
 <script setup>
 import { ref, reactive, onMounted, watch } from "vue";
-import FileUploader from "./FileUploader.vue";
 import WysiwygEditor from "./WysiwygEditor.vue";
+import PageFileManager from "./PageFileManager.vue";
 
 const props = defineProps({
   initialData: {
@@ -241,6 +173,14 @@ const props = defineProps({
       status: "draft",
       blocks: [],
     }),
+  },
+  pageId: {
+    type: String,
+    default: null,
+  },
+  conferenceId: {
+    type: String,
+    default: null,
   },
 });
 
@@ -258,7 +198,6 @@ const form = reactive({
 watch(
   () => props.initialData,
   (newValue) => {
-    console.log("PageEditor initialData changed:", newValue);
     if (newValue) {
       form.title = newValue.title;
       form.slug = newValue.slug;
@@ -268,11 +207,17 @@ watch(
 
       // Only update blocks if they exist and are an array
       if (Array.isArray(newValue.blocks) && newValue.blocks.length > 0) {
-        console.log("Updating form blocks with:", newValue.blocks);
-        form.blocks = [...newValue.blocks];
+        // Extract content from blocks
+        form.blocks = newValue.blocks.map((block) => ({
+          type: block.type || "text", // Ensure type is set, default to "text"
+          content: block.content || "",
+          alt: block.alt || "",
+          embed: block.embed || "",
+          fileName: block.fileName || "",
+        }));
+      } else {
+        form.blocks = [];
       }
-
-      console.log("Form updated with new initialData:", form);
     }
   },
   { deep: true }
@@ -286,6 +231,9 @@ const addBlock = () => {
   form.blocks.push({
     type: "text",
     content: "",
+    alt: "",
+    embed: "",
+    fileName: "",
   });
 };
 
@@ -309,51 +257,12 @@ const moveBlockDown = (index) => {
   }
 };
 
-const updateBlockType = (index) => {
-  form.blocks[index].content = "";
-};
-
 const handleWysiwygImageUpload = (imageData) => {
   // You can handle additional logic here if needed
-  console.log("Image uploaded via WYSIWYG editor:", imageData);
 };
 
-const handleMediaUpload = (files, index) => {
-  if (files && files.length > 0) {
-    form.blocks[index].content = files[0].url;
-    form.blocks[index].alt = files[0].name;
-  }
-};
-
-const handleFileUpload = (files, index) => {
-  if (files && files.length > 0) {
-    form.blocks[index].content = files[0].url;
-    form.blocks[index].fileName = files[0].name;
-  }
-};
-
-const updateVideoEmbed = (index) => {
-  const url = form.blocks[index].content;
-  if (url.includes("youtube.com") || url.includes("youtu.be")) {
-    const videoId = url.split("v=")[1] || url.split("/").pop();
-    form.blocks[
-      index
-    ].embed = `<iframe width="100%" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
-  } else if (url.includes("vimeo.com")) {
-    const videoId = url.split("/").pop();
-    form.blocks[
-      index
-    ].embed = `<iframe width="100%" height="315" src="https://player.vimeo.com/video/${videoId}" frameborder="0" allowfullscreen></iframe>`;
-  }
-};
-
-const removeFile = (index) => {
-  form.blocks[index].content = "";
-  form.blocks[index].fileName = "";
-};
-
-const handleError = (error) => {
-  this.error = error;
+const handleError = (errorMessage) => {
+  error.value = errorMessage;
 };
 
 const savePage = async () => {
@@ -367,7 +276,19 @@ const savePage = async () => {
   saveSuccess.value = false;
 
   try {
-    await emit("save", form);
+    // Ensure each block has the required type field
+    const formData = {
+      ...form,
+      blocks: form.blocks.map((block) => ({
+        type: block.type || "text", // Ensure type is present
+        content: block.content || "",
+        alt: block.alt || "",
+        embed: block.embed || "",
+        fileName: block.fileName || "",
+      })),
+    };
+
+    await emit("save", formData);
     saveSuccess.value = true;
     // Clear success message after 3 seconds
     setTimeout(() => {
@@ -406,8 +327,6 @@ const generateSlug = () => {
     } else {
       form.slug = pageSlug;
     }
-
-    console.log("Generated slug:", form.slug);
   }
 };
 
@@ -419,6 +338,11 @@ watch(
   },
   { immediate: true }
 );
+
+// Add onMounted hook to log component lifecycle
+onMounted(() => {
+  // Component is mounted
+});
 </script>
 
 <style lang="scss" scoped>
@@ -597,13 +521,15 @@ watch(
         background: #f8f9fa;
         border-bottom: 1px solid #ddd;
 
-        .block-type {
+        .block-title {
           display: flex;
           align-items: center;
           gap: 0.75rem;
+          font-weight: 500;
+          color: #2c3e50;
 
-          select {
-            min-width: 140px;
+          span {
+            font-size: 0.95rem;
           }
         }
 
@@ -747,6 +673,38 @@ watch(
       content: "\f06a";
       font-family: "Font Awesome 5 Free";
       font-weight: 900;
+    }
+  }
+
+  .file-preview {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    background: #f5f6fa;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    .file-green-icon {
+      font-size: 2.2rem;
+      color: #27ae60;
+      margin-right: 1.2rem;
+    }
+    .file-name {
+      font-weight: 500;
+      color: #2c3e50;
+      margin-right: 1.2rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .btn-icon.delete {
+      margin-left: auto;
+    }
+    .btn-icon.download {
+      color: #27ae60;
+      &:hover {
+        background: #27ae60;
+        color: white;
+      }
     }
   }
 }

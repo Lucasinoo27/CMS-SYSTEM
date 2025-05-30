@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class FileUpload extends Model
 {
@@ -17,7 +18,13 @@ class FileUpload extends Model
         'size',
         'path',
         'disk',
-        'created_by'
+        'created_by',
+        'uploadable_type',
+        'uploadable_id'
+    ];
+
+    protected $attributes = [
+        'disk' => 'public'
     ];
 
     /**
@@ -41,6 +48,6 @@ class FileUpload extends Model
      */
     public function getUrlAttribute()
     {
-        return \Storage::disk($this->disk)->url($this->path);
+        return Storage::disk($this->disk)->url($this->path);
     }
 }

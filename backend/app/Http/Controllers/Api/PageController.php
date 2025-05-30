@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Api\Traits\HasApiResponses;
 use App\Models\Page;
 use App\Models\Conference;
+use App\Models\Content;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
@@ -59,7 +60,9 @@ class PageController extends Controller
                 'blocks.*.fileName' => 'nullable|string'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return $this->errorResponse($e->errors()->first(), 422);
+            $firstError = collect($e->errors())->first()[0] ?? 'Validation error';
+            return $this->errorResponse($firstError, 422);
+            
         }
 
         // Extract blocks from the validated data
@@ -67,33 +70,19 @@ class PageController extends Controller
         unset($validated['blocks']);
 
         // Create the page with proper data
-        $pageData = $validated;
-        $pageData['slug'] = Str::slug($validated['title']);
-        $pageData['conference_id'] = $conference->id;
-        $pageData['created_by'] = Auth::id();
-        $pageData['updated_by'] = Auth::id();
-        
-        $page = Page::create($pageData);
+        $page = Page::create([
+            'title' => $validated['title'],
+            'slug' => Str::slug($validated['title']),
+            'meta_description' => $validated['meta_description'] ?? null,
+            'layout' => $validated['layout'],
+            'status' => $validated['status'],
+            'conference_id' => $conference->id,
+            'created_by' => Auth::id(),
+            'updated_by' => Auth::id()
+        ]);
 
         // Save the blocks as Content records
-        if (!empty($blocks)) {
-            foreach ($blocks as $index => $block) {
-                $content = new \App\Models\Content([
-                    'type' => $block['type'],
-                    'content' => $block['content'] ?? '',
-                    'title' => $block['alt'] ?? '',
-                    'order' => $index,
-                    'settings' => [
-                        'alt' => $block['alt'] ?? '',
-                        'embed' => $block['embed'] ?? '',
-                        'fileName' => $block['fileName'] ?? ''
-                    ],
-                    'created_by' => Auth::id(),
-                    'updated_by' => Auth::id()
-                ]);
-                $page->contents()->save($content);
-            }
-        }
+        $this->saveContentBlocks($page, $blocks);
 
         Cache::forget('admin.pages.all');
         return $this->successResponse($page, 'Page created successfully', 201);
@@ -104,13 +93,19 @@ class PageController extends Controller
      */
     public function show(Conference $conference, Page $page)
     {
-        // For anonymous users, only show published pages
-        if (!Auth::check() && $page->status !== 'published') {
-            return $this->forbiddenResponse();
+        // Check if the page belongs to the specified conference
+        if ($page->conference_id !== $conference->id) {
+            return response()->json(['success' => false, 'message' => 'Page not found in this conference'], 404);
         }
 
+        // Load the page with its contents
         $page->load(['contents', 'creator', 'updater']);
-        return $this->successResponse($page);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Success',
+            'data' => $page
+        ]);
     }
 
     /**
@@ -132,7 +127,10 @@ class PageController extends Controller
                 'blocks.*.fileName' => 'nullable|string'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return $this->errorResponse($e->errors()->first(), 422);
+            $firstError = $e->errors();
+            $firstKey = array_key_first($firstError);
+            $errorMessage = $firstError[$firstKey][0] ?? 'Validation error';
+            return $this->errorResponse($errorMessage, 422);
         }
 
         // Extract blocks from the validated data
@@ -140,35 +138,17 @@ class PageController extends Controller
         unset($validated['blocks']);
 
         if (isset($validated['title'])) {
-            $page->slug = Str::slug($validated['title']);
+            $validated['slug'] = Str::slug($validated['title']);
         }
         
         $page->fill($validated);
         $page->updated_by = Auth::id();
         $page->save();
 
-        // Update content blocks
-        if (!empty($blocks)) {
-            // Delete existing content
+        // Update content blocks if present in request
+        if (isset($request->blocks)) {
             $page->contents()->delete();
-            
-            // Create new content blocks
-            foreach ($blocks as $index => $block) {
-                $content = new \App\Models\Content([
-                    'type' => $block['type'],
-                    'content' => $block['content'] ?? '',
-                    'title' => $block['alt'] ?? '',
-                    'order' => $index,
-                    'settings' => [
-                        'alt' => $block['alt'] ?? '',
-                        'embed' => $block['embed'] ?? '',
-                        'fileName' => $block['fileName'] ?? ''
-                    ],
-                    'created_by' => Auth::id(),
-                    'updated_by' => Auth::id()
-                ]);
-                $page->contents()->save($content);
-            }
+            $this->saveContentBlocks($page, $blocks);
         }
         
         return $this->successResponse($page, 'Page updated successfully');
@@ -180,6 +160,37 @@ class PageController extends Controller
     public function destroy(Conference $conference, Page $page)
     {
         $page->delete();
+        Cache::forget('admin.pages.all');
         return $this->successResponse(null, 'Page deleted successfully');
+    }
+
+    /**
+     * Helper method to save content blocks for a page
+     */
+    private function saveContentBlocks(Page $page, array $blocks): void
+    {
+        if (empty($blocks)) {
+            return;
+        }
+            
+            
+            // Create new content blocks
+        
+            // Create new content blocks
+        foreach ($blocks as $index => $block) {
+            $page->contents()->save(new Content([
+                'type' => $block['type'],
+                'content' => $block['content'] ?? '',
+                'title' => $block['alt'] ?? '',
+                'order' => $index,
+                'settings' => [
+                    'alt' => $block['alt'] ?? '',
+                    'embed' => $block['embed'] ?? '',
+                    'fileName' => $block['fileName'] ?? ''
+                ],
+                'created_by' => Auth::id(),
+                'updated_by' => Auth::id()
+            ]));
+        }
     }
 }

@@ -1,64 +1,52 @@
 <template>
-  <div class="content-view">
-    <div class="page-header">
+  <div class='content-view'>
+    <div class='page-header'>
       <h1>My Content</h1>
     </div>
 
-    <div v-if="loading" class="loading">Loading content...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else-if="conferences.length === 0" class="empty">
+    <div v-if='loading' class='loading'>Loading content...</div>
+    <div v-else-if='error' class='error'>{{ error }}</div>
+    <div v-else-if='conferences.length === 0' class='empty'>
       No conferences assigned to you yet.
     </div>
-    <div v-else class="conferences-grid">
-      <div v-for="conference in conferences" :key="conference.id" class="conference-section">
-        <div class="conference-header">
+    <div v-else class='conferences-grid'>
+      <div v-for='conference in conferences' :key='conference.id' class='conference-section'>
+        <div class='conference-header'>
           <h2>{{ conference.name }}</h2>
-          <button class="btn-primary" @click="createPage(conference)">
-            <i class="fas fa-plus"></i> Create New Page
+          <button class='btn-primary' @click='createPage(conference)'>
+            <i class='fas fa-plus'></i> Create New Page
           </button>
         </div>
 
-        <div class="pages-grid">
-          <div v-if="conference.pages.length === 0" class="empty">
+        <div class='pages-grid'>
+          <div v-if='conference.pages.length === 0' class='empty'>
             No pages in this conference yet.
           </div>
-          <div v-else class="page-cards">
-            <div v-for="page in conference.pages" :key="page.id" class="page-card">
-              <div class="page-info">
+          <div v-else class='page-cards'>
+            <div v-for='page in conference.pages' :key='page.id' class='page-card'>
+              <div class='page-info'>
                 <h3>{{ page.title }}</h3>
-                <p class="page-url">/{{ page.slug }}</p>
-                <div class="page-meta">
+                <p class='page-url'>/{{ page.slug }}</p>
+                <div class='page-meta'>
                   <span>
-                    <i class="fas fa-calendar"></i>
+                    <i class='fas fa-calendar'></i>
                     {{ formatDate(page.updated_at) }}
                   </span>
-                  <span :class="['page-status', page.status]">
+                  <span :class='['page-status', page.status]'>
                     {{ page.status }}
                   </span>
                 </div>
               </div>
-              <div class="page-actions">
-                <button
-                  class="btn-icon"
-                  @click="editPage(page)"
-                  title="Edit Page"
-                >
-                  <i class="fas fa-edit"></i>
+              <div class='page-actions'>
+                <button class='btn-icon' @click='editPage(page)' title='Edit Page'>
+                  <i class='fas fa-edit'></i>
                 </button>
-                <button
-                  class="btn-icon"
-                  @click="previewPage(page)"
-                  title="Preview Page"
-                >
-                  <i class="fas fa-eye"></i>
+                <button class='btn-icon' @click='previewPage(page)' title='Preview Page'>
+                  <i class='fas fa-eye'></i>
                 </button>
-                <button
-                  class="btn-icon"
-                  @click="requestPublish(page)"
-                  :disabled="page.status === 'pending'"
-                  title="Request Publish"
-                >
-                  <i class="fas fa-paper-plane"></i>
+                <button class='btn-icon' @click='requestPublish(page)' :disabled='page.status === ' pending''
+                  title='Request Publish'>
+                  <i class='fas fa-paper-plane'></i>
                 </button>
               </div>
             </div>
@@ -67,40 +55,26 @@
       </div>
     </div>
 
-    <div v-if="showEditor" class="editor-container">
-      <PageEditor
-        :initialData="selectedPage"
-        @save="savePage"
-        @cancel="closeEditor"
-      />
+    <div v-if='showEditor' class='editor-container'>
+      <PageEditor :initialData='selectedPage' :conferenceId='selectedPage.conference_id' :pageId='selectedPage.id'
+        @save='savePage' @cancel='closeEditor' />
     </div>
 
     <!-- Publish Request Modal -->
-    <div v-if="showPublishModal" class="modal">
-      <div class="modal-content">
+    <div v-if='showPublishModal' class='modal'>
+      <div class='modal-content'>
         <h3>Request Publication</h3>
-        <p>Are you ready to submit "{{ selectedPage?.title }}" for review?</p>
-        <div class="form-group">
-          <label for="notes">Notes for Reviewer (optional)</label>
-          <textarea
-            id="notes"
-            v-model="publishNotes"
-            rows="4"
-            placeholder="Add any notes for the reviewer..."
-          ></textarea>
+        <p>Are you ready to submit '{{ selectedPage?.title }}' for review?</p>
+        <div class='form-group'>
+          <label for='notes'>Notes for Reviewer (optional)</label>
+          <textarea id='notes' v-model='publishNotes' rows='4'
+            placeholder='Add any notes for the reviewer...'></textarea>
         </div>
-        <div class="modal-actions">
-          <button
-            class="btn-secondary"
-            @click="showPublishModal = false"
-          >
+        <div class='modal-actions'>
+          <button class='btn-secondary' @click='showPublishModal = false'>
             Cancel
           </button>
-          <button
-            class="btn-primary"
-            @click="submitPublishRequest"
-            :disabled="submitting"
-          >
+          <button class='btn-primary' @click='submitPublishRequest' :disabled='submitting'>
             {{ submitting ? 'Submitting...' : 'Submit for Review' }}
           </button>
         </div>
@@ -196,7 +170,7 @@ const requestPublish = (page) => {
 
 const submitPublishRequest = async () => {
   if (!selectedPage.value) return
-  
+
   submitting.value = true
   try {
     await pageApi.requestPublish(selectedPage.value.id, {
@@ -294,15 +268,15 @@ onMounted(() => {
 
           .page-status {
             text-transform: capitalize;
-            
+
             &.draft {
               color: #f39c12;
             }
-            
+
             &.pending {
               color: #3498db;
             }
-            
+
             &.published {
               color: #27ae60;
             }

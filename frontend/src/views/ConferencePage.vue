@@ -2,7 +2,7 @@
   <div class="conference-page">
     <!-- Page Header -->
     <header class="page-header">
-      <h1>{{ conference ? conference.name : "Conference" }}</h1>
+      <h1>{{ conference ? conference.name : "" }}</h1>
       <router-link to="/" class="btn-secondary">
         <i class="fas fa-arrow-left"></i>
         Back to Home
@@ -39,8 +39,12 @@
             No published pages available
           </div>
           <ul v-else class="page-nav">
-            <li v-for="page in pages" :key="page.id" :class="{ active: selectedPageId === page.id }"
-              @click="selectPage(page.id)">
+            <li
+              v-for="page in pages"
+              :key="page.id"
+              :class="{ active: selectedPageId === page.id }"
+              @click="selectPage(page.id)"
+            >
               {{ page.title }}
             </li>
           </ul>
@@ -53,11 +57,42 @@
           </div>
           <div v-else class="page-content">
             <h2>{{ selectedPage.title }}</h2>
-            <div v-if="selectedPage.contents && selectedPage.contents.length > 0" class="content-blocks">
-              <div v-for="content in selectedPage.contents" :key="content.id" class="content-block"
-                v-html="content.content"></div>
+
+            <!-- Page Files Section -->
+            <div v-if="pageFiles.length > 0" class="page-files">
+              <h3>Attached Files</h3>
+              <div class="file-grid">
+                <div v-for="file in pageFiles" :key="file.id" class="file-item">
+                  <div class="file-icon">
+                    <i :class="getFileIcon(file.mime_type)"></i>
+                  </div>
+                  <div class="file-info">
+                    <div class="file-name">{{ file.original_filename }}</div>
+                    <div class="file-meta">
+                      {{ formatFileSize(file.size) }}
+                    </div>
+                  </div>
+                  <div class="file-actions">
+                    <button @click="downloadFile(file)" class="btn-download">
+                      <i class="fas fa-download"></i> Download
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div v-else class="no-content">
+
+            <div
+              v-if="selectedPage.contents && selectedPage.contents.length > 0"
+              class="content-blocks"
+            >
+              <div
+                v-for="content in selectedPage.contents"
+                :key="content.id"
+                class="content-block"
+                v-html="content.content"
+              ></div>
+            </div>
+            <div v-else-if="pageFiles.length === 0" class="no-content">
               No content available for this page.
             </div>
           </div>
@@ -68,9 +103,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import { conferenceApi } from '@/services/api';
+import { ref, computed, onMounted, watch } from "vue";
+import { useRoute } from "vue-router";
+import { conferenceApi, fileApi } from "@/services/api";
+import axios from "axios";
 
 const route = useRoute();
 const conference = ref(null);
@@ -78,6 +114,8 @@ const pages = ref([]);
 const selectedPageId = ref(null);
 const loading = ref(true);
 const error = ref(null);
+const pageFiles = ref([]);
+const loadingFiles = ref(false);
 
 // Computed property to get the selected page
 const selectedPage = computed(() => {
@@ -88,6 +126,7 @@ const selectedPage = computed(() => {
 // Function to select a page
 const selectPage = (pageId) => {
   selectedPageId.value = pageId;
+  fetchPageFiles(pageId);
 };
 
 // Format date for display
@@ -109,17 +148,112 @@ const formatDate = (dateString) => {
   }
 };
 
+// Get appropriate icon for file type
+const getFileIcon = (mimeType) => {
+  const icons = {
+    image: "fas fa-image",
+    video: "fas fa-video",
+    audio: "fas fa-music",
+    "application/pdf": "fas fa-file-pdf",
+    "application/msword": "fas fa-file-word",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      "fas fa-file-word",
+    "application/vnd.ms-excel": "fas fa-file-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+      "fas fa-file-excel",
+    "application/vnd.ms-powerpoint": "fas fa-file-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+      "fas fa-file-powerpoint",
+    "application/zip": "fas fa-file-archive",
+    "text/plain": "fas fa-file-alt",
+  };
+
+  for (const [key, value] of Object.entries(icons)) {
+    if (mimeType && mimeType.includes(key)) return value;
+  }
+
+  return "fas fa-file"; // Default icon
+};
+
+// Format file size for display
+const formatFileSize = (bytes) => {
+  if (!bytes) return "0 Bytes";
+
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+};
+
+// Fetch files associated with the selected page
+const fetchPageFiles = async (pageId) => {
+  if (!conference.value || !pageId) return;
+
+  try {
+    loadingFiles.value = true;
+    pageFiles.value = [];
+
+    const response = await fileApi.getPageFiles(conference.value.id, pageId);
+
+    // Handle different response formats
+    if (response.data && response.data.data) {
+      pageFiles.value = response.data.data;
+    } else if (response.data && Array.isArray(response.data)) {
+      pageFiles.value = response.data;
+    }
+  } catch (err) {
+    console.error("Error fetching page files:", err);
+    // Don't show error to the user, just log it
+  } finally {
+    loadingFiles.value = false;
+  }
+};
+
+// Download file function
+const downloadFile = async (file) => {
+  try {
+    // Use direct axios call instead of api service to bypass auth interceptors
+    const baseUrl = import.meta.env.VITE_API_URL || "/api";
+    const downloadUrl = `${baseUrl}/files/${file.id}/download`;
+
+    console.log("Downloading file from:", downloadUrl);
+
+    // Use axios directly to avoid authentication headers
+    const response = await axios.get(downloadUrl, {
+      responseType: "blob",
+    });
+
+    // Create a download link
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = file.original_filename;
+    document.body.appendChild(link);
+    link.click();
+
+    // Clean up
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(link);
+  } catch (err) {
+    console.error("Error downloading file:", err);
+    console.error(err.response || err);
+  }
+};
+
 const fetchConferenceData = async () => {
   try {
     loading.value = true;
     error.value = null;
 
     // First fetch the conference details
-    const conferenceResponse = await conferenceApi.get(route.params.id);
+    const conferenceResponse = await conferenceApi.get(route.params.slug);
     conference.value = conferenceResponse.data;
 
     // Then fetch the pages
-    const pagesResponse = await conferenceApi.getPages(route.params.id);
+    const pagesResponse = await conferenceApi.getPages(
+      conferenceResponse.data.id
+    );
 
     // Extract pages from the response based on its structure
     let pagesData = [];
@@ -127,8 +261,7 @@ const fetchConferenceData = async () => {
     if (pagesResponse.data && pagesResponse.data.data) {
       if (Array.isArray(pagesResponse.data.data.data)) {
         pagesData = pagesResponse.data.data.data;
-      }
-      else if (Array.isArray(pagesResponse.data.data)) {
+      } else if (Array.isArray(pagesResponse.data.data)) {
         pagesData = pagesResponse.data.data;
       }
     } else if (Array.isArray(pagesResponse.data)) {
@@ -141,6 +274,7 @@ const fetchConferenceData = async () => {
     // Select the first page by default if available
     if (pages.value.length > 0) {
       selectedPageId.value = pages.value[0].id;
+      fetchPageFiles(selectedPageId.value);
     }
   } catch (err) {
     error.value = err.message || "Failed to load conference data";
@@ -149,6 +283,13 @@ const fetchConferenceData = async () => {
     loading.value = false;
   }
 };
+
+// Watch for changes to the selected page ID
+watch(selectedPageId, (newPageId) => {
+  if (newPageId) {
+    fetchPageFiles(newPageId);
+  }
+});
 
 onMounted(fetchConferenceData);
 </script>
@@ -326,6 +467,80 @@ onMounted(fetchConferenceData);
   border-bottom: 1px solid #e9ecef;
 }
 
+.page-files {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.page-files h3 {
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+  color: #343a40;
+}
+
+.file-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.file-item {
+  border: 1px solid #e9ecef;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: row;
+  transition: all 0.2s ease;
+}
+
+.file-item:hover {
+  border-color: #007bff;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+}
+
+.file-icon {
+  font-size: 2rem;
+  color: #007bff;
+  margin-right: 1rem;
+  text-align: center;
+}
+
+.file-info {
+  flex: 1;
+}
+
+.file-name {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  word-break: break-word;
+}
+
+.file-meta {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.file-actions {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.btn-download {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background-color: #007bff;
+  color: white;
+  border-radius: 0.25rem;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.btn-download:hover {
+  background-color: #0069d9;
+}
+
 .content-blocks {
   margin-top: 1.5rem;
 }
@@ -361,6 +576,10 @@ onMounted(fetchConferenceData);
   .conference-details {
     flex-direction: column;
     gap: 1rem;
+  }
+
+  .file-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
 }
 </style>

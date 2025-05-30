@@ -57,4 +57,12 @@ class Page extends Model
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
+    
+    /**
+     * Get all of the page's files.
+     */
+    public function files()
+    {
+        return $this->morphMany(FileUpload::class, 'uploadable');
+    }
 }

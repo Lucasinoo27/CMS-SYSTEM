@@ -5,6 +5,23 @@
       <p class="page-description">
         Manage pages across all conferences in the system
       </p>
+
+      <!-- Conference filter dropdown -->
+      <div class="filter-controls">
+        <div class="filter-group">
+          <label for="conference-filter">Filter by Conference:</label>
+          <select
+            id="conference-filter"
+            v-model="selectedConferenceId"
+            class="form-control"
+          >
+            <option value="all">All Conferences</option>
+            <option v-for="conf in conferences" :key="conf.id" :value="conf.id">
+              {{ conf.name }}
+            </option>
+          </select>
+        </div>
+      </div>
     </header>
 
     <div v-if="loading" class="loading">Loading content...</div>
@@ -14,7 +31,7 @@
     </div>
     <div v-else class="conferences-grid">
       <div
-        v-for="conference in conferences"
+        v-for="conference in filteredConferences"
         :key="conference.id"
         class="conference-section"
       >
@@ -111,6 +128,8 @@
         >
           <PageEditor
             :initialData="selectedPage"
+            :conferenceId="selectedPage.conference_id"
+            :pageId="selectedPage.id"
             @save="savePage"
             @cancel="closeEditor"
           />
@@ -144,7 +163,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import PageEditor from "@/components/PageEditor.vue";
 import api, { pageApi } from "@/services/api";
 
@@ -156,12 +175,24 @@ const showEditor = ref(false);
 const showDeleteModal = ref(false);
 const selectedPage = ref(null);
 const submitting = ref(false);
+const selectedConferenceId = ref("all");
 
 // Notification system
 const showNotification = ref(false);
 const notificationMessage = ref("");
 const notificationType = ref("success");
 const hideNotificationTimer = ref(null);
+
+// Computed property to filter conferences based on selection
+const filteredConferences = computed(() => {
+  if (selectedConferenceId.value === "all") {
+    return conferences.value;
+  } else {
+    return conferences.value.filter(
+      (conf) => conf.id === selectedConferenceId.value
+    );
+  }
+});
 
 const closeNotification = () => {
   showNotification.value = false;
@@ -207,6 +238,7 @@ const showVisibilityNotification = (message, isPublished) => {
 const fetchData = async () => {
   loading.value = true;
   error.value = null;
+
   try {
     // Use the admin endpoint to get all conferences and pages
     // Add a timestamp to prevent caching
@@ -227,7 +259,6 @@ const fetchData = async () => {
       error.value = "No data received from server";
     }
   } catch (err) {
-    console.error("Error fetching data:", err);
     if (err.code === "ECONNABORTED") {
       error.value =
         "Request timed out. The server is taking too long to respond.";
@@ -265,9 +296,7 @@ const createPage = (conference) => {
 };
 
 const editPage = (page) => {
-  console.log("Edit page clicked:", page);
-
-  // Find the conference to get its slug
+  // Find the conference this page belongs to
   const conference = conferences.value.find((c) => c.id === page.conference_id);
   const conferenceSlug = conference ? conference.slug : "";
 
@@ -279,49 +308,14 @@ const editPage = (page) => {
   };
   showEditor.value = true;
 
-  // Get the authentication token
-  const token = localStorage.getItem("token");
-  if (!token) {
-    console.error("No authentication token found");
-    error.value = "Authentication error. Please log in again.";
-    return;
-  }
+  const url = `/conferences/${page.conference_id}/pages/${page.id}`;
 
   // Fetch the page with its contents
   api
-    .get(`/conferences/${page.conference_id}/pages/${page.id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      timeout: 10000, // 10 second timeout
-    })
+    .get(url)
     .then((response) => {
-      console.log("Page details received:", response.data);
       if (response.data && response.data.data) {
         const pageWithContents = response.data.data;
-        console.log("Page with contents:", pageWithContents);
-
-        // Debug the contents array
-        if (pageWithContents.contents) {
-          console.log("Contents array:", pageWithContents.contents);
-          console.log(
-            "Contents array length:",
-            pageWithContents.contents.length
-          );
-          if (pageWithContents.contents.length > 0) {
-            console.log("First content item:", pageWithContents.contents[0]);
-            console.log(
-              "First content type:",
-              pageWithContents.contents[0].type
-            );
-            console.log(
-              "First content content:",
-              pageWithContents.contents[0].content
-            );
-          }
-        } else {
-          console.log("No contents array in response");
-        }
 
         // Update the page data with contents
         const updatedPageData = {
@@ -335,33 +329,33 @@ const editPage = (page) => {
           Array.isArray(pageWithContents.contents)
         ) {
           updatedPageData.blocks = pageWithContents.contents.map((content) => {
-            const block = {
+            return {
               type: content.type,
               content: content.content,
               alt: content.title || content.settings?.alt || "",
               embed: content.settings?.embed || "",
               fileName: content.settings?.fileName || "",
             };
-            console.log(`Transformed block of type ${content.type}:`, block);
-            return block;
           });
-
-          console.log("Final blocks array:", updatedPageData.blocks);
         } else {
           updatedPageData.blocks = [];
-          console.log("No contents found or contents is not an array");
         }
 
         // Update the selected page with complete data
         selectedPage.value = updatedPageData;
-        console.log("Updated selectedPage value:", selectedPage.value);
       }
     })
     .catch((err) => {
-      console.error("Error fetching page details:", err);
-      // Don't hide the editor, just show the error
-      error.value =
-        "Failed to load complete page details. Some content may be missing.";
+      if (err.response) {
+        error.value = `Failed to load page details: ${
+          err.response?.data?.message || err.message || "Unknown error"
+        }`;
+      } else {
+        error.value = "Failed to load page details. Please try again.";
+      }
+
+      // Attempt to reload the page list
+      fetchData();
     });
 };
 
@@ -376,49 +370,27 @@ const closeEditor = () => {
 
 const savePage = async (formData) => {
   try {
-    // Debug the formData being sent to the API
-    console.log("Saving page with data:", JSON.stringify(formData, null, 2));
-    console.log("Blocks content:", formData.blocks);
-
-    const token = localStorage.getItem("token");
-    const headers = {
-      Authorization: `Bearer ${token}`,
-    };
-
     if (selectedPage.value.id) {
-      console.log(
-        `Updating page ${selectedPage.value.id} in conference ${selectedPage.value.conference_id}`
-      );
       const response = await api.put(
         `/conferences/${selectedPage.value.conference_id}/pages/${selectedPage.value.id}`,
-        formData,
-        { headers }
+        formData
       );
-      console.log("Update response:", response.data);
       showSuccessNotification(`Page "${formData.title}" updated successfully`);
     } else {
       const pageData = {
         ...formData,
         conference_id: selectedPage.value.conference_id,
       };
-      console.log(
-        `Creating new page in conference ${selectedPage.value.conference_id}`
-      );
       const response = await api.post(
         `/conferences/${selectedPage.value.conference_id}/pages`,
-        pageData,
-        { headers }
+        pageData
       );
-      console.log("Create response:", response.data);
       showSuccessNotification(`Page "${formData.title}" created successfully`);
     }
     await fetchData();
     closeEditor();
   } catch (error) {
-    console.error("Error saving page:", error);
     if (error.response) {
-      console.error("Error response data:", error.response.data);
-      console.error("Error status:", error.response.status);
       showErrorNotification(
         `Error: ${error.response.data.message || "Failed to save page"}`
       );
@@ -439,14 +411,8 @@ const deletePage = async () => {
 
   submitting.value = true;
   try {
-    const token = localStorage.getItem("token");
     await api.delete(
-      `/conferences/${selectedPage.value.conference_id}/pages/${selectedPage.value.id}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+      `/conferences/${selectedPage.value.conference_id}/pages/${selectedPage.value.id}`
     );
     await fetchData();
     showDeleteModal.value = false;
@@ -463,11 +429,6 @@ const deletePage = async () => {
 
 const togglePageVisibility = async (page) => {
   try {
-    const token = localStorage.getItem("token");
-    const headers = {
-      Authorization: `Bearer ${token}`,
-    };
-
     // Create a copy of the page with updated visibility
     const updatedPage = {
       ...page,
@@ -477,8 +438,7 @@ const togglePageVisibility = async (page) => {
     // Send the update to the API
     const response = await api.put(
       `/conferences/${page.conference_id}/pages/${page.id}`,
-      updatedPage,
-      { headers }
+      updatedPage
     );
 
     // Update the local page data
@@ -526,6 +486,44 @@ onMounted(() => {
     .page-description {
       color: #6c757d;
       font-size: 1.1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .filter-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+
+      .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+
+        label {
+          font-weight: 500;
+          color: #2c3e50;
+          white-space: nowrap;
+        }
+
+        .form-control {
+          min-width: 200px;
+          padding: 0.5rem;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 1rem;
+
+          &:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+          }
+        }
+      }
     }
   }
 

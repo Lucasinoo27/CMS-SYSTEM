@@ -52,7 +52,7 @@
           v-for="conference in conferences"
           :key="conference.id"
           class="conference-card"
-          @click="navigateToConference(conference.id)"
+          @click="navigateToConference(conference)"
         >
           <h3>{{ conference.name }}</h3>
           <div class="conference-details">
@@ -88,8 +88,8 @@ const conferences = ref([]);
 const loading = ref(true);
 const error = ref(null);
 
-const navigateToConference = (conferenceId) => {
-  router.push(`/conferences/${conferenceId}`);
+const navigateToConference = (conference) => {
+  router.push(`/conferences/${conference.slug}`);
 };
 
 const formatDate = (dateString) => {
@@ -368,6 +368,7 @@ onMounted(async () => {
   color: #666;
   margin-bottom: 1rem;
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;

@@ -16,14 +16,13 @@ class WysiwygUploadsController extends Controller
 
     public function __construct()
     {
-        $this->middleware(['auth:sanctum'], ['except' => ['publicUpload']]);
+        // All routes require authentication
+        $this->middleware(['auth:sanctum']);
         $this->middleware(function ($request, $next) {
-            if ($request->route()->getName() !== 'wysiwyg.public.upload') {
-                try {
-                    authorize(fn($user) => $user->hasAnyRole(['admin', 'editor']));
-                } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
-                    return response()->json(['message' => 'Unauthorized'], 403);
-                }
+            try {
+                authorize(fn($user) => $user->hasAnyRole(['admin', 'editor']));
+            } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+                return response()->json(['message' => 'Unauthorized'], 403);
             }
             return $next($request);
         });
@@ -39,7 +38,8 @@ class WysiwygUploadsController extends Controller
                 'file' => 'required|file|max:10240', // 10MB max
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return $this->errorResponse($e->errors()->first(), 422);
+            $errorMessage = $e->errors()['file'][0] ?? 'Validation error';
+            return $this->errorResponse($errorMessage, 422);
         }
 
         $file = $request->file('file');
@@ -53,66 +53,19 @@ class WysiwygUploadsController extends Controller
             'size' => $file->getSize(),
             'path' => $path,
             'created_by' => Auth::id(),
-            'uploadable_type' => null,
-            'uploadable_id' => null
+            'uploadable_type' => 'App\\Models\\Content',
+            'uploadable_id' => 0
         ]);
 
         $fileUpload->save();
 
-        // Return data in the format expected by TinyMCE
-        return response()->json([
-            'location' => Storage::disk('public')->url($path),
-            'url' => Storage::disk('public')->url($path),
-            'name' => $file->getClientOriginalName(),
-            'size' => $file->getSize(),
-            'type' => $file->getMimeType()
-        ]);
-    }
-    
-    /**
-     * Store a newly uploaded file from the WYSIWYG editor without authentication.
-     * This is for public-facing pages.
-     */
-    public function publicUpload(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'file' => 'required|file|max:5120', // 5MB max for public uploads
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['error' => $e->errors()->first()], 422);
-        }
-
-        $file = $request->file('file');
-        
-        // Additional security checks for public uploads
-        $extension = strtolower($file->getClientOriginalExtension());
-        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx'];
-        
-        if (!in_array($extension, $allowedExtensions)) {
-            return response()->json(['error' => 'File type not allowed'], 422);
-        }
-        
-        $filename = Str::random(40) . '.' . $extension;
-        $path = $file->storeAs('uploads/public/' . date('Y/m'), $filename, 'public');
-
-        $fileUpload = new FileUpload([
-            'filename' => $filename,
-            'original_filename' => $file->getClientOriginalName(),
-            'mime_type' => $file->getMimeType(),
-            'size' => $file->getSize(),
-            'path' => $path,
-            'created_by' => null, // No authenticated user
-            'uploadable_type' => null,
-            'uploadable_id' => null
-        ]);
-
-        $fileUpload->save();
+        // Generate absolute URL for the file
+        $fullUrl = url('/storage/' . $path);
 
         // Return data in the format expected by TinyMCE
         return response()->json([
-            'location' => Storage::disk('public')->url($path),
-            'url' => Storage::disk('public')->url($path),
+            'location' => $fullUrl,
+            'url' => $fullUrl,
             'name' => $file->getClientOriginalName(),
             'size' => $file->getSize(),
             'type' => $file->getMimeType()

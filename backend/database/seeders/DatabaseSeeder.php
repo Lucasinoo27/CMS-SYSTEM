@@ -45,5 +45,8 @@ class DatabaseSeeder extends Seeder
         
         // Create sample pages for each conference
         $this->call(PageSeeder::class);
+        
+        // Create sample content for each page
+        $this->call(PageContentSeeder::class);
     }
 }

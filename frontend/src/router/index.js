@@ -1,20 +1,20 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '@/stores/authStore';
-import AdminLayout from '@/layouts/AdminLayout.vue';
-import EditorLayout from '@/layouts/EditorLayout.vue';
+import { createRouter, createWebHistory } from "vue-router";
+import { useAuthStore } from "@/stores/authStore";
+import AdminLayout from "@/layouts/AdminLayout.vue";
+import EditorLayout from "@/layouts/EditorLayout.vue";
 
 // Auth views
-import LoginView from '../views/auth/LoginView.vue';
-import RegisterView from '../views/auth/RegisterView.vue';
-import LandingPage from '../views/LandingPage.vue';
-import ConferencePage from '../views/ConferencePage.vue';
+import LoginView from "../views/auth/LoginView.vue";
+import RegisterView from "../views/auth/RegisterView.vue";
+import LandingPage from "../views/LandingPage.vue";
+import ConferencePage from "../views/ConferencePage.vue";
 
 // Lazy-loaded views
 const ConferencesView = { template: "<div>Conferences Page</div>" };
 const NotFoundView = { template: "<div>404 - Page Not Found</div>" };
 
 // Admin Views (lazy-loaded)
-const AdminDashboardView = () => import('../views/admin/DashboardView.vue');
+const AdminDashboardView = () => import("../views/admin/DashboardView.vue");
 
 // Editor Views (lazy-loaded)
 const EditorDashboardView = () => import("../views/editor/DashboardView.vue");
@@ -32,7 +32,7 @@ const routes = [
     component: ConferencesView,
   },
   {
-    path: "/conferences/:id",
+    path: "/conferences/:slug",
     name: "conference-page",
     component: ConferencePage,
   },
@@ -48,7 +48,7 @@ const routes = [
     component: RegisterView,
     meta: { guest: true }, // Only accessible if not logged in
   },
-  
+
   // Admin routes
   {
     path: "/admin",
@@ -82,7 +82,7 @@ const routes = [
       },
     ],
   },
-  
+
   // Editor routes
   {
     path: "/editor",
@@ -106,7 +106,7 @@ const routes = [
       },
     ],
   },
-  
+
   // Catch-all route
   {
     path: "/:pathMatch(.*)*",
@@ -122,7 +122,7 @@ const router = createRouter({
 // Navigation guards
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
-  
+
   // Check if auth is initialized
   if (!authStore.isAuthenticated && localStorage.getItem("token")) {
     try {

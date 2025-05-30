@@ -53,7 +53,7 @@ class ConferenceController extends Controller
         $conference = Conference::create($conferenceData);
         
         // Forget cache when creating a new conference
-        Cache::forget('conferences.all');
+        Cache::forget('admin.conferences.all');
         
         return response()->json($conference, 201);
     }
@@ -61,14 +61,17 @@ class ConferenceController extends Controller
     /**
      * Display the specified conference.
      *
-     * @param  int  $id
+     * @param  string  $idOrSlug
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($idOrSlug)
     {
-        // Cache individual conference for 10 minutes
-        $conference = Cache::remember("conferences.{$id}", 600, function () use ($id) {
-            return Conference::findOrFail($id);
+        // Cache conference for 10 minutes
+        $conference = Cache::remember("conferences.{$idOrSlug}", 600, function () use ($idOrSlug) {
+            // Check if numeric ID or string slug
+            return is_numeric($idOrSlug)
+                ? Conference::findOrFail($idOrSlug)
+                : Conference::where('slug', $idOrSlug)->firstOrFail();
         });
         
         return response()->json($conference);
@@ -78,10 +81,10 @@ class ConferenceController extends Controller
      * Update the specified conference in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param  string  $idOrSlug
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $idOrSlug)
     {
         try {
             $validated = $request->validate([
@@ -96,7 +99,10 @@ class ConferenceController extends Controller
             return response()->json(['errors' => $e->errors()], 422);
         }
 
-        $conference = Conference::findOrFail($id);
+        // Find by ID or slug
+        $conference = is_numeric($idOrSlug)
+            ? Conference::findOrFail($idOrSlug)
+            : Conference::where('slug', $idOrSlug)->firstOrFail();
         
         // Update data with slug if name changed
         $updateData = $validated;
@@ -106,8 +112,8 @@ class ConferenceController extends Controller
         
         $conference->update($updateData);
         
-        // Forget cache when updating a conference
-        Cache::forget("conferences.{$id}");
+        // Forget cache
+        Cache::forget("conferences.{$idOrSlug}");
         Cache::forget('conferences.all');
         
         return response()->json($conference);
@@ -116,16 +122,20 @@ class ConferenceController extends Controller
     /**
      * Remove the specified conference from storage.
      *
-     * @param  int  $id
+     * @param  string  $idOrSlug
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($idOrSlug)
     {
-        $conference = Conference::findOrFail($id);
+        // Find by ID or slug
+        $conference = is_numeric($idOrSlug)
+            ? Conference::findOrFail($idOrSlug)
+            : Conference::where('slug', $idOrSlug)->firstOrFail();
+            
         $conference->delete();
         
-        // Forget cache when deleting a conference
-        Cache::forget("conferences.{$id}");
+        // Forget cache
+        Cache::forget("conferences.{$idOrSlug}");
         Cache::forget('conferences.all');
         
         return response()->json(null, 204);

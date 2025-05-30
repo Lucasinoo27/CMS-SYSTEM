@@ -39,7 +39,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Admin routes - Now using authorize helper in controllers directly
 Route::prefix('admin')->middleware(['auth:sanctum'])->group(function () {
-    Route::get('/stats', [AdminStatsController::class, 'getStats']);
     Route::get('/pages', [AdminPagesController::class, 'getAllPages']);
     Route::get('/pages/counts', [AdminPagesController::class, 'getPageCountsByConference']);
 });
@@ -66,10 +65,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
 // WYSIWYG Editor uploads
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/uploads', [WysiwygUploadsController::class, 'upload']);
+    Route::post('/files', [FileUploadController::class, 'uploadGeneral']);
+    Route::get('/files', [FileUploadController::class, 'index']);
+    Route::delete('/files/{file}', [FileUploadController::class, 'destroyGeneral']);
 });
 
-// Public uploads route for WYSIWYG editor
-Route::post('/uploads/public', [WysiwygUploadsController::class, 'publicUpload'])->name('wysiwyg.public.upload');
+// Public file routes
+Route::get('/files/{file}/download', [FileUploadController::class, 'download']);
 
 // Basic placeholder routes for testing
 Route::get('/events', fn() => response()->json(['message' => 'Events endpoint working']));
@@ -80,6 +82,7 @@ Route::middleware('auth:sanctum')->get('/user', fn(Request $request) => $request
 Route::prefix('conferences/{conference}')->group(function () {
     Route::get('pages', [PageController::class, 'index']);
     Route::get('pages/{page}', [PageController::class, 'show']);
+    Route::get('pages/{page}/files', [FileUploadController::class, 'getPageFiles'])->where('page', '[0-9]+');
 });
 
 // Conference Pages (protected routes for editing)
@@ -87,6 +90,13 @@ Route::prefix('conferences/{conference}')->middleware(['auth:sanctum'])->group(f
     Route::post('pages', [PageController::class, 'store']);
     Route::put('pages/{page}', [PageController::class, 'update']);
     Route::delete('pages/{page}', [PageController::class, 'destroy']);
+    
+    // Page Files
+    Route::prefix('pages/{page}')->group(function () {
+        Route::post('files', [FileUploadController::class, 'storeForPage'])->where('page', '[0-9]+');
+        Route::post('files/assign', [FileUploadController::class, 'assignToPage'])->where('page', '[0-9]+');
+        Route::delete('files/{file}', [FileUploadController::class, 'removeFromPage']);
+    });
     
     // Page Contents
     Route::prefix('pages/{page}')->group(function () {

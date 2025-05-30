@@ -31,7 +31,7 @@ class ConferenceSeeder extends Seeder
                 'location' => 'Berlin, Germany',
                 'start_date' => '2025-10-22',
                 'end_date' => '2025-10-25',
-                'status' => 'draft',
+                'status' => 'published',
             ],
             [
                 'name' => 'Student Exchange Program Workshop',
@@ -40,7 +40,7 @@ class ConferenceSeeder extends Seeder
                 'location' => 'London, UK',
                 'start_date' => '2025-11-05',
                 'end_date' => '2025-11-07',
-                'status' => 'draft',
+                'status' => 'published',
             ],
             [
                 'name' => 'Digital Transformation in Education',
