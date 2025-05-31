@@ -91,8 +91,9 @@
         <p>
           Are you sure you want to delete "{{
             selectedFile?.original_filename
-          }}"? This action cannot be undone.
+          }}"?
         </p>
+        <p class='warning'>This action cannot be undone.</p>
         <div class="modal-actions">
           <button @click="showDeleteModal = false" class="btn-secondary">
             Cancel
@@ -355,6 +356,7 @@ onMounted(() => {
 }
 
 .page-content {
+  overflow: hidden;
   background: white;
   padding: 30px;
   border-radius: 8px;
@@ -552,6 +554,11 @@ onMounted(() => {
   width: 100%;
 }
 
+.warning {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
 .modal-content h3 {
   margin-top: 0;
   margin-bottom: 20px;
@@ -565,31 +572,44 @@ onMounted(() => {
 }
 
 .btn-secondary {
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-}
+    background: #95a5a6;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s;
+
+    &:hover {
+      background: #7f8c8d;
+    }
+  }
 
 .btn-danger {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-}
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background 0.3s;
 
-.btn-secondary:hover,
-.btn-danger:hover {
-  opacity: 0.9;
-}
+    i {
+      font-size: 0.9rem;
+    }
 
-.btn-secondary:disabled,
-.btn-danger:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+    &:hover {
+      background: #2980b9;
+    }
+
+    &:disabled {
+      background: #95a5a6;
+      cursor: not-allowed;
+    }
+  }
 </style>

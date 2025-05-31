@@ -328,6 +328,13 @@ const editUser = async (user) => {
       await fetchUserConferences(user.id)
     }
   }
+
+  setTimeout(() => {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: 'smooth'
+    })
+  }, 100)
 }
 
 const confirmDelete = (user) => {
@@ -661,7 +668,7 @@ onBeforeUnmount(() => {
 
       .warning {
         color: #e74c3c;
-        font-weight: 500;
+        font-weight: bold;
       }
     }
   }
@@ -810,23 +817,22 @@ onBeforeUnmount(() => {
       border: 1px solid #ddd;
       border-radius: 4px;
     }
-    
-    .conference-item {
-      .conference-checkbox {
-        flex-direction: row;
-        align-items: center;
-        gap: 0.5rem;
-        cursor: pointer;
-        display: flex;
-        justify-content: space-between;
 
-        input[type="checkbox"] {
-          margin: 0;
-        }
+  .conference-checkbox {
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
 
-        span {
-          font-size: 0.9rem;
-        }
+      input[type="checkbox"] {
+        margin: 0;
+      }
+
+      span {
+        font-size: 0.9rem;
+        width: 300px;
       }
     }
   }

@@ -58,7 +58,7 @@ export default {
 
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('/api/users')
+        const response = await axios.get('/users')
         users.value = response.data
       } catch (error) {
         console.error('Error fetching users:', error)
@@ -76,7 +76,7 @@ export default {
 
     const fetchUserConferences = async (userId) => {
       try {
-        const response = await axios.get(`/api/users/${userId}/conferences`)
+        const response = await axios.get(`/users/${userId}/conferences`)
         assignedConferences.value = response.data.map(c => c.id)
       } catch (error) {
         console.error('Error fetching user conferences:', error)
@@ -106,7 +106,7 @@ export default {
 
       saving.value = true
       try {
-        const response = await axios.post(`/api/users/${selectedUser.value.id}/conferences`, {
+        const response = await axios.post(`/users/${selectedUser.value.id}/conferences`, {
           conference_ids: assignedConferences.value
         })
         

@@ -61,7 +61,7 @@
               {{ conference.location }}
             </p>
             <p class="conference-date">
-              <i class="fas fa-calendar-alt calendar-icon"></i>
+              <i class="fas fa-calendar-alt"></i>
               {{ formatDate(conference.start_date) }} -
               {{ formatDate(conference.end_date) }}
             </p>
@@ -332,28 +332,29 @@ onMounted(async () => {
 .conference-details {
   margin-bottom: 1rem;
 }
-
-.conference-date,
 .conference-location {
   font-size: 0.875rem;
-  color: #666;
   margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
-}
 
-.location-icon {
-  color: #e74c3c;
-  margin-right: 0.5rem;
-  font-size: 1rem;
-  display: none;
+  i {
+    color: #e74c3c;
+    margin-right: 0.5rem;
+    font-size: 1rem;
+  }
 }
+.conference-date {
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
 
-.calendar-icon {
-  color: #3498db;
-  margin-right: 0.5rem;
-  font-size: 1rem;
-  display: none;
+  i {
+    color: #3498db;
+    margin-right: 0.5rem;
+    font-size: 1rem;
+  }
 }
 
 .label {

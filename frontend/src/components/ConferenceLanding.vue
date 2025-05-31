@@ -78,6 +78,7 @@ export default {
 }
 
 .page-content {
+  overflow: hidden;
   background: #fff;
   padding: 2rem;
   border-radius: 0.5rem;

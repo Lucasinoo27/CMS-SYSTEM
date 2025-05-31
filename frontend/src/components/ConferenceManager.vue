@@ -330,6 +330,13 @@ const editConference = (conference) => {
   isEditing.value = true
   showEditModal.value = true
   showCreateModal.value = false
+
+  setTimeout(() => {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: 'smooth'
+    })
+  }, 100)
 }
 
 const confirmDelete = (conference) => {

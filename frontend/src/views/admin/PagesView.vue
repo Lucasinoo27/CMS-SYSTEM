@@ -34,6 +34,7 @@
         v-for="conference in filteredConferences"
         :key="conference.id"
         class="conference-section"
+        :data-conference-id="conference.id"
       >
         <div class="conference-header">
           <h2>{{ conference.name }}</h2>
@@ -57,9 +58,7 @@
             >
               <div class="page-info">
                 <h3
-                  @click="previewPage(page)"
                   class="page-title"
-                  :title="`/${page.slug}`"
                 >
                   {{ page.title }}
                 </h3>
@@ -596,7 +595,6 @@ onMounted(() => {
         h3.page-title {
           margin: 0 0 0.75rem;
           color: #2c3e50;
-          cursor: pointer;
           transition: color 0.3s;
           white-space: nowrap;
           overflow: hidden;
@@ -607,20 +605,16 @@ onMounted(() => {
           align-items: center;
           gap: 0.5rem;
 
-          &:hover {
-            color: #3498db;
-
-            &::after {
-              content: attr(title);
-              position: absolute;
-              left: 0;
-              bottom: -20px;
-              font-size: 0.8rem;
-              font-weight: normal;
-              color: #7f8c8d;
-              white-space: nowrap;
-            }
-          }
+          &::after {
+            content: attr(title);
+            position: absolute;
+            left: 0;
+            bottom: -20px;
+            font-size: 0.8rem;
+            font-weight: normal;
+            color: #7f8c8d;
+            white-space: nowrap;
+          }          
         }
 
         .page-dates {

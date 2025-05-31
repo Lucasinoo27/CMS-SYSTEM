@@ -1,6 +1,12 @@
 <template>
   <div class="login-container">
     <h1 class="title">University Consortium CMS</h1>
+    <div class="home-link-wrapper">
+      <router-link to="/" class="home-link">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </router-link>
+    </div>
     <div class="login-card">
       <h2>Login</h2>
       <form @submit.prevent="handleLogin" class="login-form">
@@ -43,10 +49,6 @@
         >
       </p>
     </div>
-    <router-link to="/" class="home-link">
-      <i class="fas fa-home"></i>
-      <span>Home</span>
-    </router-link>
   </div>
 </template>
 
@@ -99,7 +101,7 @@ const handleLogin = async () => {
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
 
   h2 {
     text-align: center;
@@ -157,7 +159,7 @@ const handleLogin = async () => {
 
 .title {
   font-size: 2rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   text-align: center;
   color: #333;
 }
@@ -187,7 +189,13 @@ const handleLogin = async () => {
   border-radius: 4px;
   margin-bottom: 20px;
 }
-
+.home-link-wrapper {
+  display: flex;
+  align-items: start;
+  max-width: 450px;
+  width: 100%;
+  margin-bottom: 1rem;
+}
 .home-link {
   color: #2c3e50;
   text-decoration: none;
@@ -196,7 +204,6 @@ const handleLogin = async () => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  margin-top: 2rem;
   border-radius: 6px;
   background: #f8f9fa;
 }

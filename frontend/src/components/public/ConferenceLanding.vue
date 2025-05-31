@@ -128,6 +128,7 @@ export default {
 }
 
 .page-content {
+  overflow: hidden;
   margin-bottom: 40px;
   padding: 20px;
   background-color: white;

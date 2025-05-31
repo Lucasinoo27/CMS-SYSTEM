@@ -1,6 +1,12 @@
 <template>
   <div class="register-container">
     <h1 class="title">University Consortium CMS</h1>
+    <div class="home-link-wrapper">
+      <router-link to="/" class="home-link">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </router-link>
+    </div>
     <div class="form-card">
       <h2>Register</h2>
       <div v-if="error" class="error-alert">
@@ -66,10 +72,6 @@
         </div>
       </form>
     </div>
-    <router-link to="/" class="home-link">
-      <i class="fas fa-home"></i>
-      <span>Home</span>
-    </router-link>
   </div>
 </template>
 
@@ -143,13 +145,13 @@ export default {
 
 .title {
   font-size: 2rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   color: #333;
 }
 
 .form-card {
   width: 100%;
-  max-width: 450px;
+  max-width: 420px;
   padding: 30px;
   background-color: white;
   border-radius: 8px;
@@ -226,7 +228,13 @@ label {
   border-radius: 4px;
   margin-bottom: 20px;
 }
-
+.home-link-wrapper {
+  display: flex;
+  align-items: start;
+  max-width: 450px;
+  width: 100%;
+  margin-bottom: 1rem;
+}
 .home-link {
   color: #2c3e50;
   text-decoration: none;
@@ -235,7 +243,6 @@ label {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  margin-top: 2rem;
   border-radius: 6px;
   background: #f8f9fa;
 }

@@ -453,6 +453,7 @@ onMounted(fetchConferenceData);
 }
 
 .page-content {
+  overflow: hidden;
   background-color: white;
   border-radius: 0.5rem;
   padding: 2rem;
