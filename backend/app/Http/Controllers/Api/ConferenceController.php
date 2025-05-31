@@ -53,7 +53,9 @@ class ConferenceController extends Controller
         $conference = Conference::create($conferenceData);
         
         // Forget cache when creating a new conference
-        Cache::forget('admin.conferences.all');
+        Cache::forget('conferences.all');
+        Cache::forget('admin.pages.all');
+        Cache::forget('admin.pages.counts');
         
         return response()->json($conference, 201);
     }
@@ -115,6 +117,8 @@ class ConferenceController extends Controller
         // Forget cache
         Cache::forget("conferences.{$idOrSlug}");
         Cache::forget('conferences.all');
+        Cache::forget('admin.pages.all');
+        Cache::forget('admin.pages.counts');
         
         return response()->json($conference);
     }
@@ -137,6 +141,8 @@ class ConferenceController extends Controller
         // Forget cache
         Cache::forget("conferences.{$idOrSlug}");
         Cache::forget('conferences.all');
+        Cache::forget('admin.pages.all');
+        Cache::forget('admin.pages.counts');
         
         return response()->json(null, 204);
     }

@@ -165,7 +165,7 @@
 <script setup>
 import { ref, onMounted, watch, computed } from "vue";
 import PageEditor from "@/components/PageEditor.vue";
-import api, { pageApi } from "@/services/api";
+import api, { pageApi, fileApi } from "@/services/api";
 
 const conferences = ref([]);
 const pages = ref([]);
@@ -370,33 +370,51 @@ const closeEditor = () => {
 
 const savePage = async (formData) => {
   try {
+    // Handle temporary files for new pages
+    const tempFiles = formData.tempFiles || [];
+    delete formData.tempFiles;
+
+    let response;
+
     if (selectedPage.value.id) {
-      const response = await api.put(
+      // Update existing page
+      response = await api.put(
         `/conferences/${selectedPage.value.conference_id}/pages/${selectedPage.value.id}`,
         formData
       );
       showSuccessNotification(`Page "${formData.title}" updated successfully`);
     } else {
-      const pageData = {
-        ...formData,
-        conference_id: selectedPage.value.conference_id,
-      };
-      const response = await api.post(
+      // Create new page
+      response = await api.post(
         `/conferences/${selectedPage.value.conference_id}/pages`,
-        pageData
+        { ...formData, conference_id: selectedPage.value.conference_id }
       );
+
+      // Assign files to the new page if needed
+      if (tempFiles.length > 0 && response.data?.data?.id) {
+        const newPageId = response.data.data.id;
+        for (const fileId of tempFiles) {
+          try {
+            await fileApi.assignToPage(
+              selectedPage.value.conference_id,
+              newPageId,
+              fileId
+            );
+          } catch (err) {
+            console.error(`Failed to assign file ${fileId} to new page:`, err);
+          }
+        }
+      }
+
       showSuccessNotification(`Page "${formData.title}" created successfully`);
     }
+
     await fetchData();
     closeEditor();
   } catch (error) {
-    if (error.response) {
-      showErrorNotification(
-        `Error: ${error.response.data.message || "Failed to save page"}`
-      );
-    } else {
-      showErrorNotification("Failed to save page. Please try again.");
-    }
+    showErrorNotification(
+      `Error: ${error.response?.data?.message || "Failed to save page"}`
+    );
     throw error;
   }
 };

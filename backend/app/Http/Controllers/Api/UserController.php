@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class UserController extends Controller
 {
@@ -191,52 +192,37 @@ class UserController extends Controller
             $conferences = $user->conferences()
                 ->select('conferences.id', 'conferences.name', 'conferences.slug')
                 ->get();
-            
-            \Log::info('Fetched conferences for user', [
-                'user_id' => $id,
-                'conferences_count' => $conferences->count(),
-                'conferences' => $conferences->toArray()
-            ]);
                 
             return response()->json($conferences);
         } catch (\Exception $e) {
-            \Log::error('Error fetching user conferences: ' . $e->getMessage());
             return response()->json(['message' => 'Failed to fetch conferences'], 500);
         }
     }
 
-    public function getMyConferences()
+    public function getMyConferences(Request $request)
     {
         try {
-            $user = auth()->user();
+            $user = $request->user();
             
             if (!$user) {
-                \Log::error('No authenticated user found in getMyConferences');
                 return response()->json(['message' => 'Unauthorized'], 401);
             }
             
             if (!$user->hasRole('editor')) {
-                \Log::error('User ' . $user->id . ' is not an editor');
                 return response()->json(['message' => 'Only editors can have conferences'], 403);
             }
-            
-            \Log::info('Fetching conferences for user ' . $user->id);
             
             $conferences = $user->conferences()
                 ->with(['pages' => function($query) {
                     $query->select('id', 'conference_id', 'title', 'slug', 'status', 'updated_at')
                         ->orderBy('title', 'asc');
                 }])
-                ->select('conferences.id', 'conferences.name', 'conferences.slug')
+                ->select('conferences.id', 'conferences.name', 'conferences.slug', 'conferences.status')
                 ->orderBy('conferences.name', 'asc')
                 ->get();
-            
-            \Log::info('Found ' . $conferences->count() . ' conferences for user ' . $user->id);
                 
             return response()->json($conferences);
         } catch (\Exception $e) {
-            \Log::error('Error in getMyConferences: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
             return response()->json([
                 'message' => 'Failed to fetch conferences',
                 'error' => $e->getMessage()
@@ -264,10 +250,6 @@ class UserController extends Controller
             // Check if user is an editor
             $isEditor = $user->roles()->where('name', 'editor')->exists();
             if (!$isEditor) {
-                \Log::warning('Attempt to assign conferences to non-editor user', [
-                    'user_id' => $id,
-                    'email' => $user->email
-                ]);
                 return response()->json([
                     'message' => 'Only editors can be assigned to conferences',
                     'user_role' => $user->roles()->pluck('name')->first()
@@ -278,12 +260,6 @@ class UserController extends Controller
             DB::beginTransaction();
             
             try {
-                // Log the conference assignment attempt
-                \Log::info('Attempting to assign conferences', [
-                    'user_id' => $id,
-                    'conference_ids' => $validated['conference_ids'] ?? []
-                ]);
-
                 // Sync the conferences (this will remove any existing assignments and add new ones)
                 $user->conferences()->sync($validated['conference_ids'] ?? []);
                 
@@ -293,12 +269,11 @@ class UserController extends Controller
                     ->get();
                 
                 DB::commit();
-                
-                \Log::info('Successfully assigned conferences', [
-                    'user_id' => $id,
-                    'assigned_conferences' => $conferences->pluck('name'),
-                    'conference_count' => $conferences->count()
-                ]);
+
+                // Clear caches that might contain conference data
+                Cache::forget('conferences.all');
+                Cache::forget('admin.pages.all');
+                Cache::forget('admin.pages.counts');
 
                 return response()->json([
                     'message' => 'Conferences assigned successfully',
@@ -307,25 +282,11 @@ class UserController extends Controller
                 ]);
             } catch (\Exception $e) {
                 DB::rollBack();
-                \Log::error('Database error while assigning conferences', [
-                    'user_id' => $id,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
                 throw $e;
             }
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::warning('Validation error in conference assignment', [
-                'errors' => $e->errors(),
-                'user_id' => $id
-            ]);
             return response()->json(['errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            \Log::error('Error in assignConferences', [
-                'user_id' => $id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
             return response()->json([
                 'message' => 'Failed to assign conferences: ' . $e->getMessage(),
                 'error_details' => $e->getMessage()
@@ -355,6 +316,11 @@ class UserController extends Controller
         
         // Detach the specified conferences
         $user->conferences()->detach($validated['conference_ids']);
+        
+        // Clear caches that might contain conference data
+        Cache::forget('conferences.all');
+        Cache::forget('admin.pages.all');
+        Cache::forget('admin.pages.counts');
         
         return response()->json([
             'message' => 'Conferences removed successfully',

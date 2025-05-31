@@ -56,10 +56,10 @@ Route::apiResource('conferences', ConferenceController::class);
 // User management routes
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('users', UserController::class);
+    Route::get('users/me/conferences', [UserController::class, 'getMyConferences']);
     Route::get('users/{id}/conferences', [UserController::class, 'getConferences']);
     Route::post('users/{id}/conferences', [UserController::class, 'assignConferences']);
     Route::delete('users/{id}/conferences', [UserController::class, 'removeConferences']);
-    Route::get('users/me/conferences', [UserController::class, 'getMyConferences']);
 });
 
 // WYSIWYG Editor uploads

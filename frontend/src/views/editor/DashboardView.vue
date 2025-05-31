@@ -3,7 +3,7 @@
     <header class="dashboard-header">
       <h1>Editor Dashboard</h1>
       <div class="user-actions">
-        <span class="user-name">{{ user ? user.name : '' }}</span>
+        <span class="user-name">{{ user ? user.name : "" }}</span>
         <button @click="logout" class="logout-btn">Logout</button>
       </div>
     </header>
@@ -11,17 +11,19 @@
     <div class="dashboard-content">
       <div class="dashboard-welcome">
         <h2>Welcome to the Editor Dashboard</h2>
-        <p>From here you can manage your assigned conferences and their content.</p>
+        <p>
+          From here you can manage your assigned conferences and their content.
+        </p>
       </div>
 
       <div class="dashboard-cards">
-        <div class="card" @click="navigateTo('/editor/content')" style="cursor: pointer;">
+        <div
+          class="card"
+          @click="navigateTo('/editor/content')"
+          style="cursor: pointer"
+        >
           <h3>My Conferences</h3>
           <p>Manage your assigned conferences</p>
-        </div>
-        <div class="card" @click="navigateTo('/editor/files')" style="cursor: pointer;">
-          <h3>Upload Files</h3>
-          <p>Upload files for conferences</p>
         </div>
       </div>
     </div>
@@ -33,13 +35,19 @@
         No recent activities found.
       </div>
       <div v-else class="activities-list">
-        <div v-for="activity in activities" :key="activity.id" class="activity-item">
+        <div
+          v-for="activity in activities"
+          :key="activity.id"
+          class="activity-item"
+        >
           <div class="activity-icon" :class="activity.type">
             <i :class="getActivityIcon(activity.type)"></i>
           </div>
           <div class="activity-content">
             <div class="activity-message">{{ activity.message }}</div>
-            <div class="activity-time">{{ formatDate(activity.created_at) }}</div>
+            <div class="activity-time">
+              {{ formatDate(activity.created_at) }}
+            </div>
           </div>
         </div>
       </div>
@@ -48,79 +56,79 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/authStore'
-import { storeToRefs } from 'pinia'
-import ConferenceManager from '@/components/ConferenceManager.vue'
-import api from '@/services/api'
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/authStore";
+import { storeToRefs } from "pinia";
+import ConferenceManager from "@/components/ConferenceManager.vue";
+import api from "@/services/api";
 
-const router = useRouter()
-const authStore = useAuthStore()
-const { user } = storeToRefs(authStore)
+const router = useRouter();
+const authStore = useAuthStore();
+const { user } = storeToRefs(authStore);
 
 const stats = ref({
   assignedConferences: 0,
   managedPages: 0,
   contentBlocks: 0,
-  uploadedFiles: 0
-})
+  uploadedFiles: 0,
+});
 
-const activities = ref([])
-const loading = ref(false)
+const activities = ref([]);
+const loading = ref(false);
 
 const logout = async () => {
   try {
-    await authStore.logout()
-    router.push('/login')
+    await authStore.logout();
+    router.push("/login");
   } catch (error) {
-    console.error('Logout failed:', error)
+    console.error("Logout failed:", error);
   }
-}
+};
 
 const fetchStats = async () => {
   try {
-    const response = await api.get('/editor/stats')
-    stats.value = response.data
+    const response = await api.get("/editor/stats");
+    stats.value = response.data;
   } catch (error) {
-    console.error('Error fetching editor stats:', error)
+    console.error("Error fetching editor stats:", error);
   }
-}
+};
 
 const fetchActivities = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const response = await api.get('/editor/activities')
-    activities.value = response.data
+    const response = await api.get("/editor/activities");
+    activities.value = response.data;
   } catch (error) {
-    console.error('Error fetching activities:', error)
+    console.error("Error fetching activities:", error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const getActivityIcon = (type) => {
   const icons = {
-    'page': 'fas fa-file-alt',
-    'conference': 'fas fa-calendar-alt',
-    'content': 'fas fa-paragraph',
-    'file': 'fas fa-file-upload'
-  }
-  return icons[type] || 'fas fa-info-circle'
-}
+    page: "fas fa-file-alt",
+    conference: "fas fa-calendar-alt",
+    content: "fas fa-paragraph",
+    file: "fas fa-file-upload",
+  };
+  return icons[type] || "fas fa-info-circle";
+};
 
 const formatDate = (date) => {
-  return new Date(date).toLocaleString()
-}
+  return new Date(date).toLocaleString();
+};
 
 const navigateTo = (path) => {
-  router.push(path)
-}
+  router.push(path);
+};
 
 onMounted(() => {
-  fetchStats()
-  fetchActivities()
-})
+  fetchStats();
+  fetchActivities();
+});
 </script>
 
 <style lang="scss" scoped>
@@ -256,10 +264,18 @@ onMounted(() => {
         margin-right: 1rem;
         flex-shrink: 0;
 
-        &.page { background: #3498db; }
-        &.conference { background: #2ecc71; }
-        &.content { background: #9b59b6; }
-        &.file { background: #e67e22; }
+        &.page {
+          background: #3498db;
+        }
+        &.conference {
+          background: #2ecc71;
+        }
+        &.content {
+          background: #9b59b6;
+        }
+        &.file {
+          background: #e67e22;
+        }
 
         i {
           color: white;

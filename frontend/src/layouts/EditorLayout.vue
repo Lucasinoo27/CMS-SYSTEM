@@ -7,7 +7,6 @@
       <ul class="nav-links">
         <li><router-link to="/editor/dashboard">Dashboard</router-link></li>
         <li><router-link to="/editor/content">My Content</router-link></li>
-        <li><router-link to="/editor/files">Files</router-link></li>
       </ul>
     </nav>
     <main class="editor-content">
@@ -17,25 +16,25 @@
 </template>
 
 <script setup>
-import { useAuthStore } from '@/stores/authStore'
-import { storeToRefs } from 'pinia'
-import { useRouter } from 'vue-router'
+import { useAuthStore } from "@/stores/authStore";
+import { storeToRefs } from "pinia";
+import { useRouter } from "vue-router";
 
-const router = useRouter()
-const authStore = useAuthStore()
-const { user } = storeToRefs(authStore)
+const router = useRouter();
+const authStore = useAuthStore();
+const { user } = storeToRefs(authStore);
 
 const logout = async () => {
   try {
-    await authStore.logout()
+    await authStore.logout();
     // Navigate after logout is complete
-    await router.push('/login')
+    await router.push("/login");
   } catch (error) {
-    console.error('Logout failed:', error)
+    console.error("Logout failed:", error);
     // If logout fails, still try to navigate to login
-    router.push('/login')
+    router.push("/login");
   }
-}
+};
 </script>
 
 <style lang="scss" scoped>
@@ -51,7 +50,7 @@ const logout = async () => {
 
     .logo {
       padding: 1rem 0;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       h1 {
         margin: 0;
         font-size: 1.5rem;
@@ -63,7 +62,7 @@ const logout = async () => {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .nav-links {
@@ -73,7 +72,7 @@ const logout = async () => {
 
       li {
         margin: 0.5rem 0;
-        
+
         a {
           color: white;
           text-decoration: none;
@@ -81,8 +80,9 @@ const logout = async () => {
           display: block;
           border-radius: 4px;
 
-          &:hover, &.router-link-active {
-            background: rgba(255,255,255,0.1);
+          &:hover,
+          &.router-link-active {
+            background: rgba(255, 255, 255, 0.1);
           }
         }
       }
@@ -94,4 +94,4 @@ const logout = async () => {
     background: #f5f6fa;
   }
 }
-</style> 
+</style>

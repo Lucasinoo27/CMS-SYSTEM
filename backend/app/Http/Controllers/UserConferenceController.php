@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Conference;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class UserConferenceController extends Controller
 {
@@ -43,6 +44,11 @@ class UserConferenceController extends Controller
             // Sync the conferences (this will handle both adding and removing)
             $user->conferences()->sync($request->conference_ids);
         });
+
+        // Clear caches that might contain conference data
+        Cache::forget('conferences.all');
+        Cache::forget('admin.pages.all');
+        Cache::forget('admin.pages.counts');
 
         return response()->json([
             'message' => 'Conference assignments updated successfully',

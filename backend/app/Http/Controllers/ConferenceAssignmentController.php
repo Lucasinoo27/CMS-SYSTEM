@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Conference;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class ConferenceAssignmentController extends Controller
 {
@@ -47,6 +48,11 @@ class ConferenceAssignmentController extends Controller
             // Add new assignments
             $user->conferences()->attach($request->conference_ids);
         });
+
+        // Clear caches that might contain conference data
+        Cache::forget('conferences.all');
+        Cache::forget('admin.pages.all');
+        Cache::forget('admin.pages.counts');
 
         return response()->json([
             'message' => 'Conferences assigned successfully',

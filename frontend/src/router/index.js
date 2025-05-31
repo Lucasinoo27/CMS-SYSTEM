@@ -99,11 +99,6 @@ const routes = [
         name: "Content",
         component: () => import("../views/editor/ContentView.vue"),
       },
-      {
-        path: "files",
-        name: "EditorFiles",
-        component: () => import("../views/editor/FilesView.vue"),
-      },
     ],
   },
 

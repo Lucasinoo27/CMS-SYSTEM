@@ -1,9 +1,5 @@
 <template>
   <div class="register-container">
-    <nav class="navbar">
-      <div class="navbar-container">
-      </div>
-    </nav>
     <h1 class="title">University Consortium CMS</h1>
     <div class="form-card">
       <h2>Register</h2>
@@ -229,20 +225,6 @@ label {
   padding: 12px;
   border-radius: 4px;
   margin-bottom: 20px;
-}
-
-.navbar {
-  background: #fff;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-}
-
-.navbar-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem 2rem;
 }
 
 .home-link {

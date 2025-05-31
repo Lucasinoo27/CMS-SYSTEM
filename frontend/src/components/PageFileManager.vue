@@ -107,6 +107,10 @@
 
         <div v-else-if="pageFiles.length === 0" class="empty-state">
           No files have been assigned to this page yet.
+          <div v-if="props.isNewPage" class="helper-text">
+            Assign files using the 'Upload New File' or 'Assign Existing File'
+            tabs. Files will be permanently attached after saving the page.
+          </div>
         </div>
 
         <div v-else class="file-grid">
@@ -181,12 +185,19 @@ const props = defineProps({
     type: [Number, String],
     required: true,
   },
+  isNewPage: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits([
   "file-assigned",
   "file-removed",
   "file-uploaded",
+  "temp-file-uploaded",
+  "temp-file-assigned",
+  "temp-file-removed",
   "error",
 ]);
 
@@ -242,6 +253,15 @@ const fetchPageFiles = async () => {
   errorPageFiles.value = "";
 
   try {
+    // If it's a new page, we don't have any files yet, but we still want to show
+    // the files that have been temporarily assigned in the current session
+    if (props.isNewPage) {
+      // Don't clear the pageFiles array, as it contains temporary assignments
+      // that should be displayed to the user
+      loadingPageFiles.value = false;
+      return;
+    }
+
     const response = await fileApi.getPageFiles(
       props.conferenceId,
       props.pageId
@@ -281,6 +301,25 @@ const uploadFile = async () => {
     const formData = new FormData();
     formData.append("file", selectedFile.value);
 
+    if (props.isNewPage) {
+      const response = await fileApi.upload(formData);
+      const fileData = response.data.data;
+
+      // Add to pageFiles for display
+      pageFiles.value.push(fileData);
+
+      // Emit for parent component to track this file
+      emit("temp-file-uploaded", fileData);
+
+      // Reset the file input
+      selectedFile.value = null;
+      document.getElementById("file-upload").value = "";
+
+      // Switch to the assigned files tab
+      activeTab.value = "assigned";
+      return;
+    }
+
     const response = await fileApi.uploadToPage(
       props.conferenceId,
       props.pageId,
@@ -316,6 +355,20 @@ const assignToPage = async (file) => {
   error.value = "";
 
   try {
+    // For new pages, just add to our temporary collection
+    if (props.isNewPage) {
+      // Add to page files for display
+      pageFiles.value.push(file);
+
+      // Emit an event for the parent to capture this file
+      emit("temp-file-assigned", file);
+
+      // Switch to assigned tab
+      activeTab.value = "assigned";
+      submitting.value = false;
+      return;
+    }
+
     await fileApi.assignToPage(props.conferenceId, props.pageId, file.id);
 
     // Refresh the page files list
@@ -349,6 +402,26 @@ const removeFile = async () => {
   errorPageFiles.value = "";
 
   try {
+    // For new pages, just remove from our temporary collection
+    if (props.isNewPage) {
+      // Remove from pageFiles
+      const fileIndex = pageFiles.value.findIndex(
+        (f) => f.id === fileToRemove.value.id
+      );
+      if (fileIndex !== -1) {
+        pageFiles.value.splice(fileIndex, 1);
+      }
+
+      // Emit an event for the parent to handle
+      emit("temp-file-removed", fileToRemove.value);
+
+      // Close the modal
+      showRemoveModal.value = false;
+      fileToRemove.value = null;
+      submitting.value = false;
+      return;
+    }
+
     console.log(
       `Removing file ${fileToRemove.value.id} from page ${props.pageId}`
     );
@@ -682,10 +755,20 @@ const getFileIcon = (mimeType) => {
 
 .empty-state {
   text-align: center;
-  padding: 2rem;
-  color: #666;
-  background-color: #f9f9f9;
+  padding: 2rem 1rem;
+  color: #6c757d;
+  background: #f8f9fa;
   border-radius: 4px;
+
+  .helper-text {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: #3498db;
+    padding: 0.5rem;
+    background-color: rgba(52, 152, 219, 0.1);
+    border-radius: 4px;
+    font-style: italic;
+  }
 }
 
 .modal {

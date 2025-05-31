@@ -78,12 +78,19 @@
       </div>
 
       <!-- Page Files Section -->
-      <div v-if="pageId && conferenceId" class="editor-section">
+      <div v-if="conferenceId" class="editor-section">
         <h3 class="section-title">
           <i class="fas fa-file-alt"></i> Page Files
         </h3>
 
-        <PageFileManager :conferenceId="conferenceId" :pageId="pageId" />
+        <PageFileManager
+          :conferenceId="conferenceId"
+          :pageId="pageId || 'temp'"
+          :isNewPage="!pageId"
+          @temp-file-uploaded="handleTempFileUploaded"
+          @temp-file-assigned="handleTempFileAssigned"
+          @temp-file-removed="handleTempFileRemoved"
+        />
       </div>
 
       <div class="editor-section">
@@ -226,6 +233,22 @@ watch(
 const saving = ref(false);
 const error = ref("");
 const saveSuccess = ref(false);
+const tempFiles = ref([]);
+
+const handleTempFileUploaded = (file) => {
+  tempFiles.value.push(file);
+};
+
+const handleTempFileAssigned = (file) => {
+  tempFiles.value.push(file);
+};
+
+const handleTempFileRemoved = (file) => {
+  const index = tempFiles.value.findIndex((f) => f.id === file.id);
+  if (index !== -1) {
+    tempFiles.value.splice(index, 1);
+  }
+};
 
 const addBlock = () => {
   form.blocks.push({
@@ -286,6 +309,7 @@ const savePage = async () => {
         embed: block.embed || "",
         fileName: block.fileName || "",
       })),
+      tempFiles: tempFiles.value.map((file) => file.id),
     };
 
     await emit("save", formData);
