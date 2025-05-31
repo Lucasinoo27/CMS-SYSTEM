@@ -11,6 +11,20 @@ use Illuminate\Support\Facades\Cache;
 class ConferenceController extends Controller
 {
     /**
+     * Valid conference locations based on partner universities
+     */
+    private array $validLocations = [
+        'Ljubljana, Slovenia',
+        'Zagreb, Croatia',
+        'Osijek, Croatia',
+        'Vienna, Austria',
+        'Padua, Italy',
+        'Prague, Czech Republic',
+        'Budapest, Hungary',
+        'Nitra, Slovakia'
+    ];
+
+    /**
      * Display a listing of the conferences.
      *
      * @return \Illuminate\Http\Response
@@ -19,7 +33,12 @@ class ConferenceController extends Controller
     {
         // Cache conferences for 10 minutes to improve performance
         $conferences = Cache::remember('conferences.all', 600, function () {
-            return Conference::orderBy('start_date', 'desc')->get();
+            return Conference::with(['editors', 'pages' => function ($query) {
+                $query->where('status', 'published')
+                    ->orderBy('created_at', 'desc');
+            }])
+            ->orderBy('start_date', 'desc')
+            ->get();
         });
         
         return response()->json($conferences);
@@ -37,7 +56,11 @@ class ConferenceController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'description' => 'required|string',
-                'location' => 'required|string',
+                'location' => ['required', 'string', function ($attribute, $value, $fail) {
+                    if (!in_array($value, $this->validLocations)) {
+                        $fail('The selected location is not valid. Please choose from the partner university locations.');
+                    }
+                }],
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after_or_equal:start_date',
             ]);
@@ -51,6 +74,12 @@ class ConferenceController extends Controller
         $conferenceData['status'] = $validated['status'] ?? 'draft';
         
         $conference = Conference::create($conferenceData);
+        
+        // Load relationships for the response
+        $conference->load(['editors', 'pages' => function ($query) {
+            $query->where('status', 'published')
+                ->orderBy('created_at', 'desc');
+        }]);
         
         // Forget cache when creating a new conference
         Cache::forget('conferences.all');
@@ -71,9 +100,14 @@ class ConferenceController extends Controller
         // Cache conference for 10 minutes
         $conference = Cache::remember("conferences.{$idOrSlug}", 600, function () use ($idOrSlug) {
             // Check if numeric ID or string slug
-            return is_numeric($idOrSlug)
-                ? Conference::findOrFail($idOrSlug)
-                : Conference::where('slug', $idOrSlug)->firstOrFail();
+            $query = is_numeric($idOrSlug)
+                ? Conference::where('id', $idOrSlug)
+                : Conference::where('slug', $idOrSlug);
+                
+            return $query->with(['editors', 'pages' => function ($query) {
+                $query->where('status', 'published')
+                    ->orderBy('created_at', 'desc');
+            }])->firstOrFail();
         });
         
         return response()->json($conference);
@@ -92,7 +126,11 @@ class ConferenceController extends Controller
             $validated = $request->validate([
                 'name' => 'sometimes|required|string|max:255',
                 'description' => 'sometimes|required|string',
-                'location' => 'sometimes|required|string',
+                'location' => ['sometimes', 'required', 'string', function ($attribute, $value, $fail) {
+                    if (!in_array($value, $this->validLocations)) {
+                        $fail('The selected location is not valid. Please choose from the partner university locations.');
+                    }
+                }],
                 'status' => 'sometimes|required|string',
                 'start_date' => 'sometimes|required|date',
                 'end_date' => 'sometimes|required|date|after_or_equal:start_date',
@@ -113,6 +151,12 @@ class ConferenceController extends Controller
         }
         
         $conference->update($updateData);
+        
+        // Load relationships for the response
+        $conference->load(['editors', 'pages' => function ($query) {
+            $query->where('status', 'published')
+                ->orderBy('created_at', 'desc');
+        }]);
         
         // Forget cache
         Cache::forget("conferences.{$idOrSlug}");
