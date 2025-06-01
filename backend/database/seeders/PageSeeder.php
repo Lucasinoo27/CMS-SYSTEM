@@ -31,50 +31,34 @@ class PageSeeder extends Seeder
         $pageTemplates = [
             [
                 'title' => 'About',
-                'meta_description' => 'Information about the conference, its history, and organizing committee.',
-                'layout' => 'default',
                 'status' => 'published',
             ],
             [
                 'title' => 'Program',
-                'meta_description' => 'Conference program, schedule, and sessions information.',
-                'layout' => 'full-width',
                 'status' => 'published',
             ],
             [
                 'title' => 'Speakers',
-                'meta_description' => 'Information about keynote speakers and presenters.',
-                'layout' => 'sidebar',
                 'status' => 'published',
             ],
             [
                 'title' => 'Registration',
-                'meta_description' => 'Registration information, deadlines, and fees.',
-                'layout' => 'default',
                 'status' => 'published',
             ],
             [
                 'title' => 'Venue',
-                'meta_description' => 'Conference venue, accommodations, and travel information.',
-                'layout' => 'sidebar',
                 'status' => 'published',
             ],
             [
                 'title' => 'Call for Papers',
-                'meta_description' => 'Information about submitting papers and research to the conference.',
-                'layout' => 'default', 
                 'status' => 'published',
             ],
             [
                 'title' => 'Sponsors',
-                'meta_description' => 'Organizations and institutions sponsoring the conference.',
-                'layout' => 'full-width',
                 'status' => 'published',
             ],
             [
                 'title' => 'Travel Information',
-                'meta_description' => 'Practical information for traveling to the conference.',
-                'layout' => 'sidebar',
                 'status' => 'published',
             ],
         ];
@@ -88,8 +72,6 @@ class PageSeeder extends Seeder
                 Page::create([
                     'title' => $template['title'],
                     'slug' => $conference->slug . '-' . Str::slug($template['title']),
-                    'meta_description' => $template['meta_description'],
-                    'layout' => $template['layout'],
                     'status' => $template['status'],
                     'conference_id' => $conference->id,
                     'created_by' => $creator->id,
