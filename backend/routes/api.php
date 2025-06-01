@@ -52,6 +52,7 @@ Route::prefix('editor')->middleware(['auth:sanctum'])->group(function () {
 
 // Conference routes
 Route::apiResource('conferences', ConferenceController::class);
+Route::get('conference-locations', [ConferenceController::class, 'getLocations']);
 
 // User management routes
 Route::middleware(['auth:sanctum'])->group(function () {

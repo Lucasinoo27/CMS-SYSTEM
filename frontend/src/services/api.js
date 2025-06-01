@@ -72,6 +72,7 @@ export const conferenceApi = {
   getAll: () => api.get("/conferences"),
   get: (idOrSlug) => api.get(`/conferences/${idOrSlug}`),
   getPages: (id) => api.get(`/conferences/${id}/pages`),
+  getLocations: () => api.get("/conference-locations"),
   create: (data) => api.post("/conferences", data),
   update: (id, data) => api.put(`/conferences/${id}`, data),
   delete: (id) => api.delete(`/conferences/${id}`),

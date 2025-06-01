@@ -107,10 +107,6 @@
 
         <div v-else-if="pageFiles.length === 0" class="empty-state">
           No files have been assigned to this page yet.
-          <div v-if="props.isNewPage" class="helper-text">
-            Assign files using the 'Upload New File' or 'Assign Existing File'
-            tabs. Files will be permanently attached after saving the page.
-          </div>
         </div>
 
         <div v-else class="file-grid">

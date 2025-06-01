@@ -44,8 +44,6 @@ class AdminPagesController extends Controller
                         'id' => $page->id,
                         'title' => $page->title,
                         'slug' => $page->slug,
-                        'meta_description' => $page->meta_description,
-                        'layout' => $page->layout,
                         'status' => $page->status,
                         'conference_id' => $page->conference_id,
                         'conference_name' => $page->conference->name,

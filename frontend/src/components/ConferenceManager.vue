@@ -105,8 +105,10 @@
           <div class="form-row">
             <div class="form-group full-width">
               <label for="location">Location</label>
-              <input type="text" id="location" v-model="form.location" required placeholder="Enter conference location"
-                class="form-control" />
+              <select id="location" v-model="form.location" required class="form-control">
+                <option value="" disabled>Select a conference location</option>
+                <option v-for="location in locations" :key="location" :value="location">{{ location }}</option>
+              </select>
             </div>
           </div>
 
@@ -181,6 +183,7 @@ const props = defineProps({
 const emit = defineEmits(['refresh'])
 
 const conferences = ref([])
+const locations = ref([])
 const loading = ref(false)
 const error = ref('')
 const submitting = ref(false)
@@ -304,6 +307,16 @@ const fetchConferences = async () => {
     loading.value = false
   }
 }
+
+const fetchLocations = async () => {
+  try {
+    const response = await conferenceApi.getLocations();
+    locations.value = response.data;
+  } catch (err) {
+    console.error("Error fetching locations:", err);
+    showErrorNotification("Failed to load location options. Please try again.");
+  }
+};
 
 const editConference = (conference) => {
   selectedConference.value = conference
@@ -435,6 +448,7 @@ const handleDelete = async () => {
 
 onMounted(() => {
   fetchConferences();
+  fetchLocations();
 });
 </script>
 

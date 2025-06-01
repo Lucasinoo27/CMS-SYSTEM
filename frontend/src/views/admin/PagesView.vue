@@ -285,7 +285,6 @@ const createPage = (conference) => {
   selectedPage.value = {
     title: "",
     slug: "",
-    layout: "default",
     status: "draft",
     blocks: [],
     conference_id: conference.id,
@@ -593,7 +592,7 @@ onMounted(() => {
         overflow: hidden;
 
         h3.page-title {
-          margin: 0 0 0.75rem;
+          margin: 0 0 0.25rem;
           color: #2c3e50;
           transition: color 0.3s;
           white-space: nowrap;

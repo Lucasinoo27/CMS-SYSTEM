@@ -45,6 +45,16 @@ class ConferenceController extends Controller
     }
 
     /**
+     * Get valid conference locations.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getLocations()
+    {
+        return response()->json($this->validLocations);
+    }
+
+    /**
      * Store a newly created conference in storage.
      *
      * @param  \Illuminate\Http\Request  $request

@@ -49,8 +49,6 @@ class PageController extends Controller
         try {
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
-                'meta_description' => 'nullable|string|max:255',
-                'layout' => 'required|string|in:default,full-width,sidebar',
                 'status' => 'required|string|in:draft,published',
                 'blocks' => 'array',
                 'blocks.*.type' => 'required|string|in:text,image,video,file',
@@ -73,8 +71,6 @@ class PageController extends Controller
         $page = Page::create([
             'title' => $validated['title'],
             'slug' => Str::slug($validated['title']),
-            'meta_description' => $validated['meta_description'] ?? null,
-            'layout' => $validated['layout'],
             'status' => $validated['status'],
             'conference_id' => $conference->id,
             'created_by' => Auth::id(),
@@ -116,8 +112,6 @@ class PageController extends Controller
         try {
             $validated = $request->validate([
                 'title' => 'sometimes|required|string|max:255',
-                'layout' => 'sometimes|required|string|in:default,full-width,sidebar',
-                'meta_description' => 'nullable|string|max:255',
                 'status' => 'sometimes|required|string|in:draft,published',
                 'blocks' => 'array',
                 'blocks.*.type' => 'required|string|in:text,image,video,file',

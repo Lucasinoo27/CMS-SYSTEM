@@ -15,9 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->string('slug')->unique();
-            $table->text('meta_description')->nullable();
-            $table->string('layout')->default('default');
-            $table->string('status')->default('draft')->index(); // draft, published
+            $table->string('status')->default('draft')->index();
             $table->foreignId('conference_id')->constrained()->onDelete('cascade');
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');

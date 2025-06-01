@@ -319,8 +319,6 @@ const createPage = (conference) => {
   selectedPage.value = {
     title: "",
     slug: "",
-    meta_description: "",
-    layout: "default",
     status: "draft",
     blocks: [],
     conference_id: conference.id,

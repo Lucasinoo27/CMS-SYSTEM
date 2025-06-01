@@ -250,10 +250,6 @@ const fetchUsers = async () => {
             user.conferences = Array.isArray(confResponse.data)
               ? confResponse.data
               : []
-            console.log(
-              `Fetched conferences for user ${user.id}:`,
-              user.conferences
-            )
           } catch (err) {
             console.error(
               `Error fetching conferences for user ${user.id}:`,
@@ -301,7 +297,6 @@ const fetchUserConferences = async (userId) => {
     const response = await axios.get(`/users/${userId}/conferences`)
     // Ensure we're setting an array of numbers
     form.conference_ids = response.data.map((c) => Number(c.id))
-    console.log('Loaded conference IDs:', form.conference_ids)
   } catch (err) {
     console.error('Error fetching user conferences:', err)
     form.conference_ids = []
@@ -359,19 +354,12 @@ const handleSubmit = async () => {
         // Ensure we have the latest conference IDs
         const conferenceIds = [...form.conference_ids]
 
-        console.log('Sending conference assignment request:', {
-          userId: selectedUser.value.id,
-          conferenceIds: conferenceIds,
-        })
-
         const response = await axios.post(
           `/users/${selectedUser.value.id}/conferences`,
           {
             conference_ids: conferenceIds,
           }
         )
-
-        console.log('Conference assignment response:', response.data)
 
         if (response.data.message === 'Conferences assigned successfully') {
           // Update the user's conferences in the local state

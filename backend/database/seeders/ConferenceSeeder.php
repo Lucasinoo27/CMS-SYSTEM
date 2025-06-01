@@ -9,20 +9,6 @@ use Illuminate\Support\Str;
 class ConferenceSeeder extends Seeder
 {
     /**
-     * Valid conference locations based on partner universities
-     */
-    private array $validLocations = [
-        'Ljubljana, Slovenia',
-        'Zagreb, Croatia',
-        'Osijek, Croatia',
-        'Vienna, Austria',
-        'Padua, Italy',
-        'Prague, Czech Republic',
-        'Budapest, Hungary',
-        'Nitra, Slovakia'
-    ];
-
-    /**
      * Run the database seeds.
      */
     public function run(): void

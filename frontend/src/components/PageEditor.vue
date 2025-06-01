@@ -37,9 +37,10 @@
               placeholder="Enter page title"
               class="form-control"
             />
+            <div class="slug-display" v-if="form.slug">/{{ form.slug }}</div>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" style="display: none">
             <label for="slug">URL Slug</label>
             <div class="input-group">
               <input
@@ -51,28 +52,6 @@
                 class="form-control"
               />
             </div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="meta-description">Meta Description</label>
-            <textarea
-              id="meta-description"
-              v-model="form.meta_description"
-              placeholder="Enter meta description for SEO"
-              class="form-control"
-              rows="3"
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="layout">Page Layout</label>
-            <select id="layout" v-model="form.layout" class="form-control">
-              <option value="default">Default Layout</option>
-              <option value="full-width">Full Width</option>
-              <option value="sidebar">With Sidebar</option>
-            </select>
           </div>
         </div>
       </div>
@@ -175,8 +154,6 @@ const props = defineProps({
     default: () => ({
       title: "",
       slug: "",
-      meta_description: "",
-      layout: "default",
       status: "draft",
       blocks: [],
     }),
@@ -196,8 +173,6 @@ const emit = defineEmits(["save", "cancel", "error"]);
 const form = reactive({
   title: props.initialData?.title || "",
   slug: props.initialData?.slug || "",
-  meta_description: props.initialData?.meta_description || "",
-  layout: props.initialData?.layout || "default",
   status: props.initialData?.status || "draft",
   blocks: [],
 });
@@ -208,8 +183,6 @@ watch(
     if (newValue) {
       form.title = newValue.title;
       form.slug = newValue.slug;
-      form.meta_description = newValue.meta_description || "";
-      form.layout = newValue.layout || "default";
       form.status = newValue.status || "draft";
 
       // Only update blocks if they exist and are an array
@@ -440,6 +413,13 @@ onMounted(() => {
       margin-bottom: 0.5rem;
       color: #2c3e50;
       font-weight: 500;
+    }
+
+    .slug-display {
+      font-size: 1rem;
+      color: #95a5a6;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
     }
 
     .input-group {
